@@ -52,6 +52,10 @@ export default function HomePage() {
     const loadedTeams = store.getAllTeamsProgress(9, 2026);
     const loadedLogs = store.getAuditLogs();
 
+    if (!user) {
+      setIsLoginModalOpen(true);
+    }
+
     setCurrentUser(user);
     setArticles(loadedArticles);
     setUnitProfile(loadedUnit);
@@ -310,11 +314,13 @@ export default function HomePage() {
         </main>
       </div>
 
-      {/* Login & Switch Account Modal */}
+      {/* Login & Switch Account Modal - Always force login when no user */}
       <LoginModal
-        isOpen={isLoginModalOpen}
+        isOpen={isLoginModalOpen || !currentUser}
         onLoginSuccess={handleLoginSuccess}
-        onClose={() => setIsLoginModalOpen(false)}
+        onClose={() => {
+          if (currentUser) setIsLoginModalOpen(false);
+        }}
       />
     </div>
   );

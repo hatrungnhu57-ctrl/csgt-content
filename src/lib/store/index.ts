@@ -21,13 +21,13 @@ import { reviewUnitNames } from '../guardrails/unit-name';
 import { reviewAccidentContent } from '../guardrails/accident';
 
 const STORAGE_KEYS = {
-  CURRENT_USER: 'csgt_current_user_v2',
-  ACCOUNTS: 'csgt_accounts_v2',
-  ARTICLES: 'csgt_articles_v2',
-  VERSIONS: 'csgt_versions_v2',
-  AUDIT_LOGS: 'csgt_audit_logs_v2',
-  UNIT_PROFILE: 'csgt_unit_profile_v2',
-  TARGET_SETTING: 'csgt_target_setting_v2',
+  CURRENT_USER: 'csgt_current_user_v3',
+  ACCOUNTS: 'csgt_accounts_v3',
+  ARTICLES: 'csgt_articles_v3',
+  VERSIONS: 'csgt_versions_v3',
+  AUDIT_LOGS: 'csgt_audit_logs_v3',
+  UNIT_PROFILE: 'csgt_unit_profile_v3',
+  TARGET_SETTING: 'csgt_target_setting_v3',
 };
 
 // Default Unit Profile with 3 default Teams
@@ -332,17 +332,15 @@ class StoreManager {
   }
 
   getCurrentUser(): UserAccount | null {
-    if (!this.isBrowser()) return DEFAULT_ACCOUNTS[0];
+    if (!this.isBrowser()) return null;
     const raw = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
     if (!raw) {
-      // Default to admin initially
-      this.setCurrentUser(DEFAULT_ACCOUNTS[0]);
-      return DEFAULT_ACCOUNTS[0];
+      return null;
     }
     try {
       return JSON.parse(raw);
     } catch {
-      return DEFAULT_ACCOUNTS[0];
+      return null;
     }
   }
 
