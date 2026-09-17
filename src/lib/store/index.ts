@@ -1,5 +1,4 @@
-// State Management, Seed Data & Local Storage Persistence
-// Implements Schema (Section XXXIV), Audit Logs (Section XXXV), Version History (Section XXXVI)
+// State Management, Multi-User Auth, Team Targets & Local Storage Persistence
 
 import {
   Article,
@@ -9,8 +8,10 @@ import {
   AuditLogEntry,
   MonthlyTarget,
   SourceData,
+  TeamGroup,
+  TeamTargetProgress,
   UnitProfile,
-  UserProfile,
+  UserAccount,
 } from './types';
 import { checkArticleSimilarity } from '../guardrails/similarity';
 import { factCheckArticleWithSource } from '../guardrails/fact-checker';
@@ -20,62 +21,129 @@ import { reviewUnitNames } from '../guardrails/unit-name';
 import { reviewAccidentContent } from '../guardrails/accident';
 
 const STORAGE_KEYS = {
-  ARTICLES: 'csgt_content_articles_v1',
-  VERSIONS: 'csgt_content_versions_v1',
-  AUDIT_LOGS: 'csgt_content_audit_logs_v1',
-  UNIT_PROFILE: 'csgt_content_unit_profile_v1',
-  USER_PROFILE: 'csgt_content_user_profile_v1',
-  TARGET_SETTING: 'csgt_content_target_setting_v1',
+  CURRENT_USER: 'csgt_current_user_v2',
+  ACCOUNTS: 'csgt_accounts_v2',
+  ARTICLES: 'csgt_articles_v2',
+  VERSIONS: 'csgt_versions_v2',
+  AUDIT_LOGS: 'csgt_audit_logs_v2',
+  UNIT_PROFILE: 'csgt_unit_profile_v2',
+  TARGET_SETTING: 'csgt_target_setting_v2',
 };
 
-// Default Unit Profile
+// Default Unit Profile with 3 default Teams
 export const DEFAULT_UNIT_PROFILE: UnitProfile = {
-  id: 'unit-tracu-01',
-  full_name: 'Đội Cảnh sát giao thông - trật tự, Công an huyện Trà Cú',
-  short_name: 'CSGT Trà Cú',
-  parent_unit: 'Công an tỉnh Trà Vinh',
+  id: 'unit-01',
+  full_name: 'Đội Cảnh sát giao thông - trật tự, Công an huyện',
+  short_name: 'CSGT Đơn vị',
+  parent_unit: 'Công an tỉnh / thành phố',
   department: 'Đội Cảnh sát giao thông - trật tự',
-  location: 'Huyện Trà Cú, tỉnh Trà Vinh',
-  force_display_name: 'Lực lượng Cảnh sát giao thông Công an huyện Trà Cú',
-  channel_name: 'Trang Thông tin CSGT Công an huyện Trà Cú',
-  default_hashtags: ['#CSGT', '#ATGT', '#CongAnTraCu', '#TraVinhAnToan'],
+  location: 'Địa bàn quản lý',
+  force_display_name: 'Lực lượng Cảnh sát giao thông Công an huyện',
+  channel_name: 'Trang Thông tin CSGT Công an huyện',
+  default_hashtags: ['#CSGT', '#ATGT', '#CongAnNhanDan', '#ViBinhYenCuocSong'],
+  teams: [
+    {
+      id: 'to-1',
+      name: 'Tổ 1 - Tuần tra kiểm soát tuyến Quốc lộ',
+      leader_name: 'Đại úy Nguyễn Văn A',
+      member_count: 6,
+      target_count: 3,
+    },
+    {
+      id: 'to-2',
+      name: 'Tổ 2 - Tuần tra kiểm soát tuyến Tỉnh lộ & Đô thị',
+      leader_name: 'Thượng úy Trần Văn B',
+      member_count: 6,
+      target_count: 3,
+    },
+    {
+      id: 'to-3',
+      name: 'Tổ 3 - Xử lý vi phạm & Tuyên truyền an toàn',
+      leader_name: 'Đại úy Lê Thị C',
+      member_count: 4,
+      target_count: 3,
+    },
+  ],
   created_at: '2026-09-01T08:00:00.000Z',
   updated_at: '2026-09-01T08:00:00.000Z',
 };
 
-// Default User Profile
-export const DEFAULT_USER_PROFILE: UserProfile = {
-  id: 'user-001',
-  name: 'Đại úy Nguyễn Văn Hùng',
-  email: 'hung.csgt.tracu@bocongan.gov.vn',
-  badge_number: '284-912',
-  rank: 'Đại úy',
-  role: 'officer',
-  unit_id: 'unit-tracu-01',
-};
+// Default Seed Accounts (Admin + Tổ 1, Tổ 2, Tổ 3)
+export const DEFAULT_ACCOUNTS: UserAccount[] = [
+  {
+    id: 'acc-admin',
+    username: 'admin',
+    password: '123',
+    name: 'Chỉ huy Đội (Quản trị hệ thống)',
+    badge_number: 'BCH-01',
+    rank: 'Trung tá',
+    role: 'admin',
+    unit_id: 'unit-01',
+  },
+  {
+    id: 'acc-to1',
+    username: 'to1',
+    password: '123',
+    name: 'Tổ 1 - TTKS Quốc lộ',
+    badge_number: 'TO1-01',
+    rank: 'Đại úy',
+    role: 'team',
+    team_id: 'to-1',
+    team_name: 'Tổ 1 - Tuần tra kiểm soát tuyến Quốc lộ',
+    unit_id: 'unit-01',
+  },
+  {
+    id: 'acc-to2',
+    username: 'to2',
+    password: '123',
+    name: 'Tổ 2 - TTKS Tỉnh lộ & Đô thị',
+    badge_number: 'TO2-01',
+    rank: 'Thượng úy',
+    role: 'team',
+    team_id: 'to-2',
+    team_name: 'Tổ 2 - Tuần tra kiểm soát tuyến Tỉnh lộ & Đô thị',
+    unit_id: 'unit-01',
+  },
+  {
+    id: 'acc-to3',
+    username: 'to3',
+    password: '123',
+    name: 'Tổ 3 - Tuyên truyền & XLVPHC',
+    badge_number: 'TO3-01',
+    rank: 'Đại úy',
+    role: 'team',
+    team_id: 'to-3',
+    team_name: 'Tổ 3 - Xử lý vi phạm & Tuyên truyền an toàn',
+    unit_id: 'unit-01',
+  },
+];
 
-// Sample Seed Articles for Month 09/2026
+// Sample Seed Articles
 export const INITIAL_SEED_ARTICLES: Article[] = [
   {
     id: 'art-001',
-    user_id: 'user-001',
-    unit_id: 'unit-tracu-01',
-    title: 'Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú: Xử lý nghiêm 14 trường hợp vi phạm nồng độ cồn',
-    sapo: 'Nhằm bảo đảm trật tự, an toàn giao thông trên địa bàn, ngày 05/09/2026, Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú đã tăng cường kiểm soát, phát hiện và lập biên bản xử lý 14 trường hợp vi phạm nồng độ cồn.',
-    body: 'Thực hiện cao điểm bảo đảm trật tự an toàn giao thông, tối ngày 05/09/2026 (từ 19h00 đến 23h30), tổ công tác thuộc Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú đã huy động 10 lượt cán bộ, chiến sĩ tổ chức cắm chốt kiểm tra trên tuyến Quốc lộ 53 (đoạn qua thị trấn Trà Cú).\n\nTrong ca công tác, tổ làm nhiệm vụ đã dừng kiểm tra 120 lượt phương tiện. Qua đó phát hiện 14 trường hợp người điều khiển mô tô vi phạm nồng độ cồn. Lực lượng chức năng đã tiến hành niêm phong, tạm giữ 14 phương tiện và tạm giữ 14 giấy phép lái xe theo đúng quy định của pháp luật.',
+    user_id: 'acc-to1',
+    author_name: 'Tổ 1 - TTKS Quốc lộ',
+    team_id: 'to-1',
+    team_name: 'Tổ 1 - Tuần tra kiểm soát tuyến Quốc lộ',
+    unit_id: 'unit-01',
+    title: 'Đội Cảnh sát giao thông - trật tự: Xử lý nghiêm 14 trường hợp vi phạm nồng độ cồn',
+    sapo: 'Nhằm bảo đảm trật tự, an toàn giao thông trên địa bàn, ngày 05/09/2026, lực lượng Cảnh sát giao thông đã tăng cường kiểm soát, phát hiện và lập biên bản xử lý 14 trường hợp vi phạm nồng độ cồn.',
+    body: 'Thực hiện cao điểm bảo đảm trật tự an toàn giao thông, tối ngày 05/09/2026 (từ 19h00 đến 23h30), tổ công tác thuộc Đội Cảnh sát giao thông - trật tự đã huy động 10 lượt cán bộ, chiến sĩ tổ chức cắm chốt kiểm tra trên tuyến Quốc lộ.\n\nTrong ca công tác, tổ làm nhiệm vụ đã dừng kiểm tra 120 lượt phương tiện. Qua đó phát hiện 14 trường hợp người điều khiển mô tô vi phạm nồng độ cồn. Lực lượng chức năng đã tiến hành niêm phong, tạm giữ 14 phương tiện và tạm giữ 14 giấy phép lái xe theo đúng quy định của pháp luật.',
     recommendation: 'Lực lượng Cảnh sát giao thông khuyến cáo nhân dân: Tuyệt đối tuân thủ thông điệp "Đã uống rượu bia - Không lái xe". Việc chấp hành nghiêm quy định pháp luật góp phần bảo vệ tính mạng cho chính bản thân và bình yên cho mọi gia đình.',
-    hashtags: ['#CSGT', '#ATGT', '#DaUongRuouBiaKhongLaiXe', '#CSGTTraCu', '#QuocLo53'],
+    hashtags: ['#CSGT', '#ATGT', '#DaUongRuouBiaKhongLaiXe', '#TTATGT'],
     article_type: 'nong_do_con',
     topic: 'Nồng độ cồn',
     status: 'PUBLISHED',
     source_data: {
       date: '2026-09-05',
       time: '19h00 - 23h30',
-      location: 'Thị trấn Trà Cú',
-      route: 'Quốc lộ 53',
-      unit_name: 'Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú',
+      location: 'Khu vực trung tâm',
+      route: 'Quốc lộ',
+      unit_name: 'Đội Cảnh sát giao thông - trật tự',
+      team_name: 'Tổ 1',
       main_event: 'Kiểm soát nồng độ cồn trong đêm',
-      actions_taken: 'Cắm chốt kiểm tra tại Km 42 Quốc lộ 53',
+      actions_taken: 'Cắm chốt kiểm tra tại Km 42 Quốc lộ',
       main_results: 'Phát hiện xử lý 14 trường hợp vi phạm',
       officers_count: 10,
       vehicles_inspected: 120,
@@ -97,11 +165,11 @@ export const INITIAL_SEED_ARTICLES: Article[] = [
     source_snapshot: {
       date: '2026-09-05',
       time: '19h00 - 23h30',
-      location: 'Thị trấn Trà Cú',
-      route: 'Quốc lộ 53',
-      unit_name: 'Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú',
+      location: 'Khu vực trung tâm',
+      route: 'Quốc lộ',
+      unit_name: 'Đội Cảnh sát giao thông - trật tự',
       main_event: 'Kiểm soát nồng độ cồn trong đêm',
-      actions_taken: 'Cắm chốt kiểm tra tại Km 42 Quốc lộ 53',
+      actions_taken: 'Cắm chốt kiểm tra tại Km 42 Quốc lộ',
       main_results: 'Phát hiện xử lý 14 trường hợp vi phạm',
       officers_count: 10,
       vehicles_inspected: 120,
@@ -121,36 +189,39 @@ export const INITIAL_SEED_ARTICLES: Article[] = [
       ],
     },
     public_content: {
-      title: 'Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú: Xử lý nghiêm 14 trường hợp vi phạm nồng độ cồn',
-      sapo: 'Nhằm bảo đảm trật tự, an toàn giao thông trên địa bàn, ngày 05/09/2026, Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú đã tăng cường kiểm soát, phát hiện và lập biên bản xử lý 14 trường hợp vi phạm nồng độ cồn.',
-      body: 'Thực hiện cao điểm bảo đảm trật tự an toàn giao thông, tối ngày 05/09/2026 (từ 19h00 đến 23h30), tổ công tác thuộc Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú đã huy động 10 lượt cán bộ, chiến sĩ tổ chức cắm chốt kiểm tra trên tuyến Quốc lộ 53 (đoạn qua thị trấn Trà Cú).\n\nTrong ca công tác, tổ làm nhiệm vụ đã dừng kiểm tra 120 lượt phương tiện. Qua đó phát hiện 14 trường hợp người điều khiển mô tô vi phạm nồng độ cồn. Lực lượng chức năng đã tiến hành niêm phong, tạm giữ 14 phương tiện và tạm giữ 14 giấy phép lái xe theo đúng quy định của pháp luật.',
+      title: 'Đội Cảnh sát giao thông - trật tự: Xử lý nghiêm 14 trường hợp vi phạm nồng độ cồn',
+      sapo: 'Nhằm bảo đảm trật tự, an toàn giao thông trên địa bàn, ngày 05/09/2026, lực lượng Cảnh sát giao thông đã tăng cường kiểm soát, phát hiện và lập biên bản xử lý 14 trường hợp vi phạm nồng độ cồn.',
+      body: 'Thực hiện cao điểm bảo đảm trật tự an toàn giao thông, tối ngày 05/09/2026 (từ 19h00 đến 23h30), tổ công tác thuộc Đội Cảnh sát giao thông - trật tự đã huy động 10 lượt cán bộ, chiến sĩ tổ chức cắm chốt kiểm tra trên tuyến Quốc lộ.\n\nTrong ca công tác, tổ làm nhiệm vụ đã dừng kiểm tra 120 lượt phương tiện. Qua đó phát hiện 14 trường hợp người điều khiển mô tô vi phạm nồng độ cồn. Lực lượng chức năng đã tiến hành niêm phong, tạm giữ 14 phương tiện và tạm giữ 14 giấy phép lái xe theo đúng quy định của pháp luật.',
       recommendation: 'Lực lượng Cảnh sát giao thông khuyến cáo nhân dân: Tuyệt đối tuân thủ thông điệp "Đã uống rượu bia - Không lái xe". Việc chấp hành nghiêm quy định pháp luật góp phần bảo vệ tính mạng cho chính bản thân và bình yên cho mọi gia đình.',
-      hashtags: ['#CSGT', '#ATGT', '#DaUongRuouBiaKhongLaiXe', '#CSGTTraCu', '#QuocLo53'],
+      hashtags: ['#CSGT', '#ATGT', '#DaUongRuouBiaKhongLaiXe', '#TTATGT'],
     },
     version: 1,
     published_at: '2026-09-06T09:00:00.000Z',
-    published_url: 'https://facebook.com/csgt.tracu/posts/101',
     created_at: '2026-09-05T23:45:00.000Z',
     updated_at: '2026-09-06T09:00:00.000Z',
   },
   {
     id: 'art-002',
-    user_id: 'user-001',
-    unit_id: 'unit-tracu-01',
-    title: 'Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú: Tăng cường tuần tra, xử lý 09 trường hợp chạy quá tốc độ quy định',
-    sapo: 'Ngày 12/09/2026, Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú đã triển khai chuyên đề kiểm soát tốc độ trên tuyến Tỉnh lộ 914, phát hiện và lập biên bản xử lý 09 trường hợp tài xế chạy quá tốc độ cho phép.',
-    body: 'Nhằm phòng ngừa tai nạn giao thông từ nguyên nhân chạy quá tốc độ, sáng ngày 12/09/2026, tổ tuần tra kiểm soát giao thông đã bố trí máy đo tốc độ ghi hình tự động kết hợp tổ công tác công khai trên tuyến Tỉnh lộ 914.\n\nQua kiểm soát hơn 80 lượt xe lưu thông, lực lượng chức năng phát hiện 09 trường hợp vi phạm (gồm 03 ô tô và 06 mô tô). Tất cả các trường hợp đều được thông báo hình ảnh vi phạm rõ ràng và lập biên bản xử lý vi phạm hành chính.',
+    user_id: 'acc-to2',
+    author_name: 'Tổ 2 - TTKS Tỉnh lộ & Đô thị',
+    team_id: 'to-2',
+    team_name: 'Tổ 2 - Tuần tra kiểm soát tuyến Tỉnh lộ & Đô thị',
+    unit_id: 'unit-01',
+    title: 'Đội Cảnh sát giao thông - trật tự: Tăng cường tuần tra, xử lý 09 trường hợp chạy quá tốc độ quy định',
+    sapo: 'Ngày 12/09/2026, lực lượng Cảnh sát giao thông đã triển khai chuyên đề kiểm soát tốc độ trên tuyến Tỉnh lộ, phát hiện và lập biên bản xử lý 09 trường hợp tài xế chạy quá tốc độ cho phép.',
+    body: 'Nhằm phòng ngừa tai nạn giao thông từ nguyên nhân chạy quá tốc độ, sáng ngày 12/09/2026, tổ tuần tra kiểm soát giao thông đã bố trí máy đo tốc độ ghi hình tự động kết hợp tổ công tác công khai trên tuyến Tỉnh lộ.\n\nQua kiểm soát hơn 80 lượt xe lưu thông, lực lượng chức năng phát hiện 09 trường hợp vi phạm (gồm 03 ô tô và 06 mô tô). Tất cả các trường hợp đều được thông báo hình ảnh vi phạm rõ ràng và lập biên bản xử lý vi phạm hành chính.',
     recommendation: 'Cảnh sát giao thông khuyến cáo người điều khiển phương tiện: Luôn làm chủ tốc độ, chú ý quan sát biển báo hiệu đường bộ và giữ khoảng cách an toàn, đặc biệt tại các đoạn đường giao cắt, khu dân cư đông đúc.',
-    hashtags: ['#CSGT', '#ATGT', '#LamChuTocDo', '#TocDoAnToan', '#TinhLo914'],
+    hashtags: ['#CSGT', '#ATGT', '#LamChuTocDo', '#TocDoAnToan'],
     article_type: 'toc_do',
     topic: 'Tốc độ',
     status: 'PUBLISHED',
     source_data: {
       date: '2026-09-12',
       time: '08h00 - 11h30',
-      location: 'Xã Đại An',
-      route: 'Tỉnh lộ 914',
-      unit_name: 'Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú',
+      location: 'Tuyến Tỉnh lộ',
+      route: 'Tỉnh lộ',
+      unit_name: 'Đội Cảnh sát giao thông - trật tự',
+      team_name: 'Tổ 2',
       main_event: 'Kiểm soát tốc độ phương tiện',
       actions_taken: 'Đo tốc độ bằng thiết bị kỹ thuật nghiệp vụ kết hợp dừng xe công khai',
       main_results: 'Phát hiện xử lý 09 trường hợp vi phạm tốc độ',
@@ -174,9 +245,9 @@ export const INITIAL_SEED_ARTICLES: Article[] = [
     source_snapshot: {
       date: '2026-09-12',
       time: '08h00 - 11h30',
-      location: 'Xã Đại An',
-      route: 'Tỉnh lộ 914',
-      unit_name: 'Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú',
+      location: 'Tuyến Tỉnh lộ',
+      route: 'Tỉnh lộ',
+      unit_name: 'Đội Cảnh sát giao thông - trật tự',
       main_event: 'Kiểm soát tốc độ phương tiện',
       actions_taken: 'Đo tốc độ bằng thiết bị kỹ thuật nghiệp vụ kết hợp dừng xe công khai',
       main_results: 'Phát hiện xử lý 09 trường hợp vi phạm tốc độ',
@@ -198,100 +269,117 @@ export const INITIAL_SEED_ARTICLES: Article[] = [
       ],
     },
     public_content: {
-      title: 'Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú: Tăng cường tuần tra, xử lý 09 trường hợp chạy quá tốc độ quy định',
-      sapo: 'Ngày 12/09/2026, Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú đã triển khai chuyên đề kiểm soát tốc độ trên tuyến Tỉnh lộ 914, phát hiện và lập biên bản xử lý 09 trường hợp tài xế chạy quá tốc độ cho phép.',
-      body: 'Nhằm phòng ngừa tai nạn giao thông từ nguyên nhân chạy quá tốc độ, sáng ngày 12/09/2026, tổ tuần tra kiểm soát giao thông đã bố trí máy đo tốc độ ghi hình tự động kết hợp tổ công tác công khai trên tuyến Tỉnh lộ 914.\n\nQua kiểm soát hơn 80 lượt xe lưu thông, lực lượng chức năng phát hiện 09 trường hợp vi phạm (gồm 03 ô tô và 06 mô tô). Tất cả các trường hợp đều được thông báo hình ảnh vi phạm rõ ràng và lập biên bản xử lý vi phạm hành chính.',
+      title: 'Đội Cảnh sát giao thông - trật tự: Tăng cường tuần tra, xử lý 09 trường hợp chạy quá tốc độ quy định',
+      sapo: 'Ngày 12/09/2026, lực lượng Cảnh sát giao thông đã triển khai chuyên đề kiểm soát tốc độ trên tuyến Tỉnh lộ, phát hiện và lập biên bản xử lý 09 trường hợp tài xế chạy quá tốc độ cho phép.',
+      body: 'Nhằm phòng ngừa tai nạn giao thông từ nguyên nhân chạy quá tốc độ, sáng ngày 12/09/2026, tổ tuần tra kiểm soát giao thông đã bố trí máy đo tốc độ ghi hình tự động kết hợp tổ công tác công khai trên tuyến Tỉnh lộ.\n\nQua kiểm soát hơn 80 lượt xe lưu thông, lực lượng chức năng phát hiện 09 trường hợp vi phạm (gồm 03 ô tô và 06 mô tô). Tất cả các trường hợp đều được thông báo hình ảnh vi phạm rõ ràng và lập biên bản xử lý vi phạm hành chính.',
       recommendation: 'Cảnh sát giao thông khuyến cáo người điều khiển phương tiện: Luôn làm chủ tốc độ, chú ý quan sát biển báo hiệu đường bộ và giữ khoảng cách an toàn, đặc biệt tại các đoạn đường giao cắt, khu dân cư đông đúc.',
-      hashtags: ['#CSGT', '#ATGT', '#LamChuTocDo', '#TocDoAnToan', '#TinhLo914'],
+      hashtags: ['#CSGT', '#ATGT', '#LamChuTocDo', '#TocDoAnToan'],
     },
     version: 1,
     published_at: '2026-09-13T08:30:00.000Z',
-    published_url: 'https://facebook.com/csgt.tracu/posts/102',
     created_at: '2026-09-12T17:00:00.000Z',
     updated_at: '2026-09-13T08:30:00.000Z',
   },
-  {
-    id: 'art-003',
-    user_id: 'user-001',
-    unit_id: 'unit-tracu-01',
-    title: 'Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú: Tuyên truyền an toàn giao thông và xử lý học sinh chưa đủ tuổi điều khiển xe máy',
-    sapo: 'Ngày 16/09/2026, Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú đã phối hợp với các trường THPT trên địa bàn tăng cường kiểm tra, nhắc nhở và xử lý nghiêm các trường hợp học sinh vi phạm trật tự an toàn giao thông.',
-    body: 'Thực hiện kế hoạch tăng cường bảo đảm TTATGT cho lứa tuổi học sinh trong năm học mới 2026 - 2027, sáng 16/09/2026, tổ công tác đã tiến hành tuần tra kiểm soát tại khu vực cổng trường THPT Trà Cú và tuyến đường lân cận.\n\nQua kiểm tra, lực lượng CSGT đã phát hiện 06 trường hợp học sinh điều khiển xe gắn máy dung tích xi lanh trên 50cm3 khi chưa đủ tuổi, không đội mũ bảo hiểm. Tổ công tác đã mời phụ huynh đến làm việc, ký cam kết không giao xe cho con em khi chưa đủ điều kiện theo luật định.',
-    recommendation: 'Cảnh sát giao thông đề nghị các bậc phụ huynh và nhà trường: Nâng cao trách nhiệm quản lý, giáo dục con em; tuyệt đối không giao xe mô tô, xe gắn máy cho học sinh khi chưa đủ tuổi hoặc chưa có giấy phép lái xe, bảo vệ an toàn tương lai cho các em.',
-    hashtags: ['#CSGT', '#ATGT', '#AnToanGiaoThongHocSinh', '#VanHoaGiaoThong', '#CongAnTraCu'],
-    article_type: 'hoc_sinh',
-    topic: 'Học sinh – thanh thiếu niên',
-    status: 'NEEDS_REVIEW',
-    source_data: {
-      date: '2026-09-16',
-      time: '06h30 - 08h00',
-      location: 'Khu vực cổng trường THPT Trà Cú',
-      route: 'Đường 3/2, thị trấn Trà Cú',
-      unit_name: 'Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú',
-      main_event: 'Kiểm tra, xử lý học sinh vi phạm TTATGT đầu năm học',
-      actions_taken: 'Cắm chốt kiểm tra kết hợp tuyên truyền nhắc nhở',
-      main_results: 'Lập biên bản 06 trường hợp, mời phụ huynh làm việc',
-      officers_count: 4,
-      vehicles_inspected: 35,
-      violations_count: 6,
-      motorcycle_count: 6,
-      vehicles_seized: 6,
-      violations: [
-        {
-          id: 'v3',
-          violation_name: 'Người từ đủ 16 tuổi đến dưới 18 tuổi điều khiển xe mô tô có dung tích xi lanh từ 50 cm3 trở lên',
-          count: 6,
-          legal_reference: 'Nghị định 100/2019/NĐ-CP',
-          penalty: 'Phạt cảnh cáo, phạt tiền đối với chủ phương tiện giao xe',
-          verified: true,
-        },
-      ],
-    },
-    source_snapshot: {
-      date: '2026-09-16',
-      time: '06h30 - 08h00',
-      location: 'Khu vực cổng trường THPT Trà Cú',
-      route: 'Đường 3/2, thị trấn Trà Cú',
-      unit_name: 'Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú',
-      main_event: 'Kiểm tra, xử lý học sinh vi phạm TTATGT đầu năm học',
-      actions_taken: 'Cắm chốt kiểm tra kết hợp tuyên truyền nhắc nhở',
-      main_results: 'Lập biên bản 06 trường hợp, mời phụ huynh làm việc',
-      officers_count: 4,
-      vehicles_inspected: 35,
-      violations_count: 6,
-      motorcycle_count: 6,
-      vehicles_seized: 6,
-      violations: [
-        {
-          id: 'v3',
-          violation_name: 'Người từ đủ 16 tuổi đến dưới 18 tuổi điều khiển xe mô tô có dung tích xi lanh từ 50 cm3 trở lên',
-          count: 6,
-          legal_reference: 'Nghị định 100/2019/NĐ-CP',
-          penalty: 'Phạt cảnh cáo, phạt tiền đối với chủ phương tiện giao xe',
-          verified: true,
-        },
-      ],
-    },
-    public_content: {
-      title: 'Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú: Tuyên truyền an toàn giao thông và xử lý học sinh chưa đủ tuổi điều khiển xe máy',
-      sapo: 'Ngày 16/09/2026, Đội Cảnh sát giao thông - trật tự Công an huyện Trà Cú đã phối hợp với các trường THPT trên địa bàn tăng cường kiểm tra, nhắc nhở và xử lý nghiêm các trường hợp học sinh vi phạm trật tự an toàn giao thông.',
-      body: 'Thực hiện kế hoạch tăng cường bảo đảm TTATGT cho lứa tuổi học sinh trong năm học mới 2026 - 2027, sáng 16/09/2026, tổ công tác đã tiến hành tuần tra kiểm soát tại khu vực cổng trường THPT Trà Cú và tuyến đường lân cận.\n\nQua kiểm tra, lực lượng CSGT đã phát hiện 06 trường hợp học sinh điều khiển xe gắn máy dung tích xi lanh trên 50cm3 khi chưa đủ tuổi, không đội mũ bảo hiểm. Tổ công tác đã mời phụ huynh đến làm việc, ký cam kết không giao xe cho con em khi chưa đủ điều kiện theo luật định.',
-      recommendation: 'Cảnh sát giao thông đề nghị các bậc phụ huynh và nhà trường: Nâng cao trách nhiệm quản lý, giáo dục con em; tuyệt đối không giao xe mô tô, xe gắn máy cho học sinh khi chưa đủ tuổi hoặc chưa có giấy phép lái xe, bảo vệ an toàn tương lai cho các em.',
-      hashtags: ['#CSGT', '#ATGT', '#AnToanGiaoThongHocSinh', '#VanHoaGiaoThong', '#CongAnTraCu'],
-    },
-    version: 1,
-    created_at: '2026-09-16T10:00:00.000Z',
-    updated_at: '2026-09-16T10:00:00.000Z',
-  },
 ];
 
-// Helper Functions to Read/Write LocalStorage
 class StoreManager {
   private isBrowser(): boolean {
     return typeof window !== 'undefined';
   }
 
-  // Articles
+  // --- AUTHENTICATION & USER MANAGEMENT ---
+  getAccounts(): UserAccount[] {
+    if (!this.isBrowser()) return DEFAULT_ACCOUNTS;
+    const raw = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
+    if (!raw) {
+      this.saveAccounts(DEFAULT_ACCOUNTS);
+      return DEFAULT_ACCOUNTS;
+    }
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return DEFAULT_ACCOUNTS;
+    }
+  }
+
+  saveAccounts(accounts: UserAccount[]): void {
+    if (!this.isBrowser()) return;
+    localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
+  }
+
+  createAccount(account: Omit<UserAccount, 'id'>): UserAccount {
+    const accounts = this.getAccounts();
+    const newAcc: UserAccount = {
+      ...account,
+      id: `acc-${Date.now()}`,
+    };
+    accounts.push(newAcc);
+    this.saveAccounts(accounts);
+    this.addAuditLog({
+      id: `log-${Date.now()}`,
+      user_id: 'admin',
+      user_name: 'Chỉ huy Đội',
+      action: 'USER_CREATED',
+      description: `Đã tạo tài khoản mới: ${newAcc.username} (${newAcc.name})`,
+      timestamp: new Date().toISOString(),
+    });
+    return newAcc;
+  }
+
+  deleteAccount(accountId: string): void {
+    const accounts = this.getAccounts().filter(a => a.id !== accountId);
+    this.saveAccounts(accounts);
+  }
+
+  getCurrentUser(): UserAccount | null {
+    if (!this.isBrowser()) return DEFAULT_ACCOUNTS[0];
+    const raw = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+    if (!raw) {
+      // Default to admin initially
+      this.setCurrentUser(DEFAULT_ACCOUNTS[0]);
+      return DEFAULT_ACCOUNTS[0];
+    }
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return DEFAULT_ACCOUNTS[0];
+    }
+  }
+
+  setCurrentUser(user: UserAccount | null): void {
+    if (!this.isBrowser()) return;
+    if (user) {
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    }
+  }
+
+  login(username: string, password: string):UserAccount | null {
+    const accounts = this.getAccounts();
+    const found = accounts.find(
+      a => a.username.toLowerCase() === username.trim().toLowerCase() && a.password === password.trim()
+    );
+    if (found) {
+      this.setCurrentUser(found);
+      this.addAuditLog({
+        id: `log-${Date.now()}`,
+        user_id: found.id,
+        user_name: found.name,
+        action: 'USER_LOGIN',
+        description: `Đăng nhập hệ thống thành công với vai trò: ${found.role}`,
+        timestamp: new Date().toISOString(),
+      });
+      return found;
+    }
+    return null;
+  }
+
+  logout(): void {
+    this.setCurrentUser(null);
+  }
+
+  // --- ARTICLES ---
   getArticles(): Article[] {
     if (!this.isBrowser()) return INITIAL_SEED_ARTICLES;
     const raw = localStorage.getItem(STORAGE_KEYS.ARTICLES);
@@ -316,6 +404,7 @@ class StoreManager {
   }
 
   saveArticle(article: Article): void {
+    const currentUser = this.getCurrentUser();
     const articles = this.getArticles();
     const index = articles.findIndex(a => a.id === article.id);
 
@@ -330,7 +419,7 @@ class StoreManager {
       recommendation: article.recommendation,
       hashtags: article.hashtags,
       created_at: new Date().toISOString(),
-      edited_by: 'Đại úy Nguyễn Văn Hùng',
+      edited_by: currentUser?.name || article.author_name || 'Cán bộ',
       change_summary: index >= 0 ? `Cập nhật phiên bản v${article.version}` : 'Tạo mới bài viết',
     });
 
@@ -347,8 +436,8 @@ class StoreManager {
     this.saveArticles(articles);
     this.addAuditLog({
       id: `log-${Date.now()}`,
-      user_id: 'user-001',
-      user_name: 'Đại úy Nguyễn Văn Hùng',
+      user_id: currentUser?.id || 'unknown',
+      user_name: currentUser?.name || 'Cán bộ',
       article_id: article.id,
       action: index >= 0 ? 'ARTICLE_EDITED' : 'ARTICLE_CREATED',
       description: `${index >= 0 ? 'Chỉnh sửa' : 'Tạo mới'} bài viết: "${article.title.slice(0, 50)}..."`,
@@ -357,12 +446,13 @@ class StoreManager {
   }
 
   deleteArticle(id: string): void {
+    const currentUser = this.getCurrentUser();
     const articles = this.getArticles().filter(a => a.id !== id);
     this.saveArticles(articles);
     this.addAuditLog({
       id: `log-${Date.now()}`,
-      user_id: 'user-001',
-      user_name: 'Đại úy Nguyễn Văn Hùng',
+      user_id: currentUser?.id || 'unknown',
+      user_name: currentUser?.name || 'Cán bộ',
       article_id: id,
       action: 'ARTICLE_DELETED',
       description: `Đã xóa bài viết có ID: ${id}`,
@@ -370,7 +460,7 @@ class StoreManager {
     });
   }
 
-  // Version History
+  // --- VERSION HISTORY ---
   getArticleVersions(articleId: string): ArticleVersion[] {
     if (!this.isBrowser()) return [];
     const raw = localStorage.getItem(STORAGE_KEYS.VERSIONS);
@@ -396,7 +486,7 @@ class StoreManager {
     localStorage.setItem(STORAGE_KEYS.VERSIONS, JSON.stringify(allVersions));
   }
 
-  // Audit Logs
+  // --- AUDIT LOGS ---
   getAuditLogs(): AuditLogEntry[] {
     if (!this.isBrowser()) return [];
     const raw = localStorage.getItem(STORAGE_KEYS.AUDIT_LOGS);
@@ -412,11 +502,10 @@ class StoreManager {
     if (!this.isBrowser()) return;
     const logs = this.getAuditLogs();
     logs.unshift(entry);
-    // Keep max 200 logs
     localStorage.setItem(STORAGE_KEYS.AUDIT_LOGS, JSON.stringify(logs.slice(0, 200)));
   }
 
-  // Unit Profile
+  // --- UNIT PROFILE & TEAMS ---
   getUnitProfile(): UnitProfile {
     if (!this.isBrowser()) return DEFAULT_UNIT_PROFILE;
     const raw = localStorage.getItem(STORAGE_KEYS.UNIT_PROFILE);
@@ -436,28 +525,67 @@ class StoreManager {
     localStorage.setItem(STORAGE_KEYS.UNIT_PROFILE, JSON.stringify(profile));
   }
 
-  // Monthly Target Calculation (Section VI)
+  // --- TEAM PROGRESS & TARGETS ---
+  getAllTeamsProgress(month: number = 9, year: number = 2026): TeamTargetProgress[] {
+    const unit = this.getUnitProfile();
+    const allArticles = this.getArticles();
+    const teams = unit.teams || [];
+
+    return teams.map(team => {
+      const teamArticles = allArticles.filter(a => {
+        const d = new Date(a.created_at || a.published_at || Date.now());
+        const isThisMonth = d.getMonth() + 1 === month && d.getFullYear() === year;
+        return isThisMonth && a.team_id === team.id;
+      });
+
+      const published = teamArticles.filter(a => a.status === 'PUBLISHED').length;
+      const inReview = teamArticles.filter(a => a.status === 'NEEDS_REVIEW' || a.status === 'APPROVED' || a.status === 'GENERATED').length;
+      const drafts = teamArticles.filter(a => a.status === 'DRAFT').length;
+      const target = team.target_count || 3;
+
+      return {
+        team_id: team.id,
+        team_name: team.name,
+        target_count: target,
+        completed_count: published,
+        draft_count: drafts,
+        in_review_count: inReview,
+        is_achieved: published >= target,
+        articles: teamArticles,
+      };
+    });
+  }
+
+  // Target for current logged in user/team
   getMonthlyTarget(month: number = 9, year: number = 2026): MonthlyTarget {
+    const currentUser = this.getCurrentUser();
     const articles = this.getArticles();
-    const thisMonthArticles = articles.filter(a => {
+
+    // If team user, only count team's articles. If admin, count all unit articles.
+    const relevantArticles = articles.filter(a => {
       const d = new Date(a.created_at || a.published_at || Date.now());
-      return d.getMonth() + 1 === month && d.getFullYear() === year;
+      const isThisMonth = d.getMonth() + 1 === month && d.getFullYear() === year;
+      if (!isThisMonth) return false;
+      if (currentUser?.role === 'admin' || currentUser?.role === 'commander') return true;
+      return a.team_id === currentUser?.team_id || a.user_id === currentUser?.id;
     });
 
-    const published_count = thisMonthArticles.filter(a => a.status === 'PUBLISHED').length;
-    const in_review_count = thisMonthArticles.filter(a => a.status === 'NEEDS_REVIEW' || a.status === 'APPROVED' || a.status === 'GENERATED').length;
-    const draft_count = thisMonthArticles.filter(a => a.status === 'DRAFT').length;
+    const published_count = relevantArticles.filter(a => a.status === 'PUBLISHED').length;
+    const in_review_count = relevantArticles.filter(a => a.status === 'NEEDS_REVIEW' || a.status === 'APPROVED' || a.status === 'GENERATED').length;
+    const draft_count = relevantArticles.filter(a => a.status === 'DRAFT').length;
     const completed_count = published_count;
 
-    // Configurable target (default 3)
+    // Configurable target
     let target_count = 3;
-    if (this.isBrowser()) {
+    if (currentUser?.team_id) {
+      const unit = this.getUnitProfile();
+      const team = unit.teams?.find(t => t.id === currentUser.team_id);
+      if (team) target_count = team.target_count || 3;
+    } else if (this.isBrowser()) {
       const custom = localStorage.getItem(STORAGE_KEYS.TARGET_SETTING);
       if (custom) target_count = parseInt(custom, 10) || 3;
     }
 
-    // Calculate current day in month & warning level
-    // Context date is 2026-09-17
     const now = new Date();
     const currentDay = now.getDate();
     const totalDaysInMonth = new Date(year, month, 0).getDate();
@@ -474,7 +602,8 @@ class StoreManager {
 
     return {
       id: `tgt-${year}-${month}`,
-      user_id: 'user-001',
+      user_id: currentUser?.id || 'admin',
+      team_id: currentUser?.team_id,
       month,
       year,
       target_count,

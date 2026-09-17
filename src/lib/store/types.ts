@@ -49,6 +49,7 @@ export interface SourceData {
   route?: string; // Tuyến đường (Quốc lộ 1A, Tỉnh lộ 848...)
   area?: string; // Địa bàn (Huyện Trà Cú, TP. Cần Thơ...)
   unit_name: string; // Đơn vị thực hiện (Đội CSGT-TT Công an huyện...)
+  team_name?: string; // Tên tổ công tác (Tổ 1, Tổ 2, Tổ tuần tra đêm...)
   forces_involved?: string; // Lực lượng tham gia (CSGT phối hợp CSCĐ, Công an xã...)
   main_event: string; // Nội dung/sự việc chính
   actions_taken: string; // Lực lượng đã thực hiện hoạt động gì
@@ -121,8 +122,8 @@ export interface PrivacyReviewResult {
 export interface UnitNameReviewResult {
   is_valid: boolean;
   warnings: string[];
-  first_occurrence_full: boolean; // Có dùng cụm "Cảnh sát giao thông" đầy đủ lần đầu không
-  abbreviations_detected: string[]; // C08, PC08, Đội 6...
+  first_occurrence_full: boolean;
+  abbreviations_detected: string[];
 }
 
 export interface LegalReviewResult {
@@ -139,7 +140,6 @@ export interface AccidentReviewResult {
 }
 
 export interface ReviewChecklist {
-  // Nội dung
   title_body_aligned: boolean;
   sapo_accurate: boolean;
   time_present: boolean;
@@ -148,12 +148,10 @@ export interface ReviewChecklist {
   numbers_matched: boolean;
   no_hallucination: boolean;
 
-  // Pháp luật
   violations_match_source: boolean;
   legal_references_verified: boolean;
   penalties_verified: boolean;
 
-  // Thông tin cá nhân
   names_abbreviated: boolean;
   plates_masked: boolean;
   no_phone_numbers: boolean;
@@ -161,7 +159,6 @@ export interface ReviewChecklist {
   no_driver_licenses: boolean;
   no_detailed_addresses: boolean;
 
-  // Biên tập
   has_recommendation: boolean;
   has_proper_hashtags: boolean;
   tone_objective: boolean;
@@ -170,7 +167,7 @@ export interface ReviewChecklist {
 }
 
 export interface ArticleReviewSummary {
-  overall_status: ReviewOverallStatus; // GREEN | YELLOW | RED
+  overall_status: ReviewOverallStatus;
   checklist: ReviewChecklist;
   fact_check: FactCheckResult;
   privacy_review: PrivacyReviewResult;
@@ -199,7 +196,10 @@ export interface ArticleVersion {
 
 export interface Article {
   id: string;
-  user_id: string;
+  user_id: string; // ID của tài khoản tạo bài
+  author_name: string; // Tên cán bộ/tổ tạo bài
+  team_id?: string; // ID của tổ (VD: to-1, to-2)
+  team_name?: string; // Tên tổ công tác
   unit_id: string;
   title: string;
   sapo: string;
@@ -209,8 +209,8 @@ export interface Article {
   article_type: ArticleType;
   topic: string;
   status: ArticleStatus;
-  source_data: SourceData; // Dữ liệu nghiệp vụ gốc (chứa số liệu đầy đủ)
-  source_snapshot: SourceData; // Bất biến tại thời điểm AI tạo bài
+  source_data: SourceData;
+  source_snapshot: SourceData;
   public_content: {
     title: string;
     sapo: string;
@@ -234,36 +234,49 @@ export interface Article {
   notes?: string;
 }
 
+export interface TeamGroup {
+  id: string;
+  name: string; // Tổ 1 - Tuần tra kiểm soát tuyến QL
+  leader_name: string;
+  member_count: number;
+  target_count: number; // Chỉ tiêu của tổ (VD: 3 bài/tháng)
+}
+
 export interface UnitProfile {
   id: string;
-  full_name: string; // Tên đầy đủ: Công an huyện Trà Cú - Công an tỉnh Trà Vinh
-  short_name: string; // Tên rút gọn thường gọi
-  parent_unit: string; // Đơn vị cấp trên: Công an tỉnh Trà Vinh
-  department: string; // Đội Cảnh sát giao thông - trật tự
-  location: string; // Địa bàn quản lý: Huyện Trà Cú, tỉnh Trà Vinh
-  force_display_name: string; // Cách ghi tên lực lượng: Lực lượng Cảnh sát giao thông Công an huyện Trà Cú
-  channel_name: string; // Trang/kênh truyền thông: CSGT Trà Cú / Fanpage Công an huyện
-  default_hashtags: string[]; // Hashtag mặc định: #CSGT #ATGT #CongAnTraCu
+  full_name: string;
+  short_name: string;
+  parent_unit: string;
+  department: string;
+  location: string;
+  force_display_name: string;
+  channel_name: string;
+  default_hashtags: string[];
+  teams: TeamGroup[];
   created_at: string;
   updated_at: string;
 }
 
-export interface UserProfile {
+export interface UserAccount {
   id: string;
-  name: string;
-  email: string;
-  badge_number: string; // Số hiệu CAND
-  rank: string; // Cấp bậc: Đại úy, Thiếu tá...
-  role: 'officer' | 'team_lead' | 'commander' | 'admin';
+  username: string; // Tên đăng nhập (VD: admin, to1, to2, to3...)
+  password: string; // Mật khẩu (VD: 123456)
+  name: string; // Tên hiển thị (VD: Ban Chỉ huy Đội / Tổ 1 - Tuần tra QL53)
+  badge_number: string;
+  rank: string;
+  role: 'admin' | 'commander' | 'team' | 'officer'; // Admin = Chủ hệ thống, Commander = Chỉ huy, Team = Tài khoản Tổ
+  team_id?: string;
+  team_name?: string;
   unit_id: string;
 }
 
 export interface MonthlyTarget {
   id: string;
   user_id: string;
-  month: number; // 1 - 12
-  year: number; // 2026
-  target_count: number; // Mặc định 3 bài
+  team_id?: string;
+  month: number;
+  year: number;
+  target_count: number;
   completed_count: number;
   draft_count: number;
   in_review_count: number;
@@ -272,37 +285,48 @@ export interface MonthlyTarget {
   days_left_in_month: number;
 }
 
+export interface TeamTargetProgress {
+  team_id: string;
+  team_name: string;
+  target_count: number;
+  completed_count: number;
+  draft_count: number;
+  in_review_count: number;
+  is_achieved: boolean;
+  articles: Article[];
+}
+
 export interface TopicSuggestion {
   id: string;
   topic_title: string;
   article_type: ArticleType;
-  angle: string; // Góc tuyên truyền
-  reason: string; // Vì sao đề xuất (ví dụ: Tháng này chưa có bài về học sinh, tháng trước đã viết nhiều nồng độ cồn)
+  angle: string;
+  reason: string;
   sample_outline: string[];
   suggested_hashtags: string[];
 }
 
 export interface VideoScriptSegment {
-  time_range: string; // "00:00 - 00:03"
+  time_range: string;
   phase: 'hook' | 'development' | 'result' | 'recommendation' | 'end_card';
-  scene_description: string; // Mô tả cảnh quay
-  visual_text: string; // Chữ hiển thị trên màn hình
-  voice_over: string; // Lời bình (đọc)
-  subtitle: string; // Phụ đề hiển thị
-  b_roll_suggestion: string; // Gợi ý hình ảnh chèn thêm
+  scene_description: string;
+  visual_text: string;
+  voice_over: string;
+  subtitle: string;
+  b_roll_suggestion: string;
 }
 
 export interface VideoScript {
   id: string;
   article_id: string;
   title: string;
-  target_duration: string; // "30-45 giây"
+  target_duration: string;
   aspect_ratio: '9:16';
   main_message: string;
   segments: VideoScriptSegment[];
   recommendations: string;
   end_card: {
-    logo_instruction: string; // "Logo CSGT đặt góc trên bên trái, không che chữ"
+    logo_instruction: string;
     text: string;
     hotline?: string;
   };
@@ -315,6 +339,8 @@ export interface AuditLogEntry {
   user_name: string;
   article_id?: string;
   action:
+    | 'USER_LOGIN'
+    | 'USER_CREATED'
     | 'ARTICLE_CREATED'
     | 'ARTICLE_EDITED'
     | 'AI_GENERATED'

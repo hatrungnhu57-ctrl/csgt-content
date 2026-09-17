@@ -10,52 +10,78 @@ import { TopicSuggestionsView } from '@/components/topics/TopicSuggestionsView';
 import { ArticleLibraryView } from '@/components/library/ArticleLibraryView';
 import { VideoScriptGenerator } from '@/components/video/VideoScriptGenerator';
 import { SettingsView } from '@/components/settings/SettingsView';
-import { store, DEFAULT_UNIT_PROFILE, DEFAULT_USER_PROFILE } from '@/lib/store';
-import { Article, MonthlyTarget, TopicSuggestion, UnitProfile, UserProfile, AuditLogEntry } from '@/lib/store/types';
+import { LoginModal } from '@/components/auth/LoginModal';
+import { store, DEFAULT_UNIT_PROFILE } from '@/lib/store';
+import { Article, MonthlyTarget, TopicSuggestion, UnitProfile, UserAccount, AuditLogEntry, TeamTargetProgress } from '@/lib/store/types';
 
 export default function HomePage() {
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const [articles, setArticles] = useState<Article[]>([]);
   const [unitProfile, setUnitProfile] = useState<UnitProfile>(DEFAULT_UNIT_PROFILE);
-  const [userProfile, setUserProfile] = useState<UserProfile>(DEFAULT_USER_PROFILE);
+  const [teamsProgress, setTeamsProgress] = useState<TeamTargetProgress[]>([]);
   const [target, setTarget] = useState<MonthlyTarget>({
     id: 'tgt-2026-9',
-    user_id: 'user-001',
+    user_id: 'acc-admin',
     month: 9,
     year: 2026,
     target_count: 3,
     completed_count: 2,
     draft_count: 0,
-    in_review_count: 1,
+    in_review_count: 0,
     published_count: 2,
     deadline_alert_level: 'normal',
     days_left_in_month: 13,
   });
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
 
-  // Active editing or reviewing article ID
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
   const [writerInitialArticle, setWriterInitialArticle] = useState<Article | null>(null);
 
-  // Sync state with store on mount
   useEffect(() => {
     refreshData();
   }, []);
 
   const refreshData = () => {
+    const user = store.getCurrentUser();
     const loadedArticles = store.getArticles();
     const loadedUnit = store.getUnitProfile();
     const loadedTarget = store.getMonthlyTarget(9, 2026);
+    const loadedTeams = store.getAllTeamsProgress(9, 2026);
     const loadedLogs = store.getAuditLogs();
 
+    setCurrentUser(user);
     setArticles(loadedArticles);
     setUnitProfile(loadedUnit);
     setTarget(loadedTarget);
+    setTeamsProgress(loadedTeams);
     setAuditLogs(loadedLogs);
   };
 
+  const handleLoginSuccess = (user: UserAccount) => {
+    setCurrentUser(user);
+    setIsLoginModalOpen(false);
+    refreshData();
+  };
+
+  const handleLogout = () => {
+    store.logout();
+    setCurrentUser(null);
+    setIsLoginModalOpen(true);
+  };
+
   const handleSaveArticle = (article: Article) => {
-    store.saveArticle(article);
+    // Inject current author and team if not set
+    const enriched: Article = {
+      ...article,
+      user_id: article.user_id || currentUser?.id || 'acc-admin',
+      author_name: article.author_name || currentUser?.name || 'Tổ công tác',
+      team_id: article.team_id || currentUser?.team_id,
+      team_name: article.team_name || currentUser?.team_name,
+    };
+    store.saveArticle(enriched);
     refreshData();
   };
 
@@ -105,13 +131,13 @@ export default function HomePage() {
         ...art,
         status: 'PUBLISHED',
         published_at: new Date().toISOString(),
-        published_url: publishedUrl || art.published_url || 'https://facebook.com/csgt.tracu/posts/' + Date.now(),
+        published_url: publishedUrl || art.published_url || 'https://facebook.com/csgt/posts/' + Date.now(),
       };
       store.saveArticle(updated);
       store.addAuditLog({
         id: `log-${Date.now()}`,
-        user_id: userProfile.id,
-        user_name: userProfile.name,
+        user_id: currentUser?.id || 'unknown',
+        user_name: currentUser?.name || 'Cán bộ',
         article_id: updated.id,
         action: 'ARTICLE_PUBLISHED',
         description: `Đã xuất bản bài viết: "${updated.title}"`,
@@ -125,7 +151,10 @@ export default function HomePage() {
   const handleUseTopicSuggestion = (sug: TopicSuggestion) => {
     const newArt: Article = {
       id: `art-${Date.now()}`,
-      user_id: userProfile.id,
+      user_id: currentUser?.id || 'acc-admin',
+      author_name: currentUser?.name || 'Tổ công tác',
+      team_id: currentUser?.team_id,
+      team_name: currentUser?.team_name,
       unit_id: unitProfile.id,
       title: sug.topic_title,
       sapo: sug.angle,
@@ -138,6 +167,7 @@ export default function HomePage() {
       source_data: {
         date: new Date().toISOString().split('T')[0],
         unit_name: unitProfile.full_name,
+        team_name: currentUser?.team_name,
         main_event: sug.angle,
         actions_taken: sug.angle,
         main_results: '',
@@ -178,10 +208,12 @@ export default function HomePage() {
     <div className="min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col font-sans">
       <Navbar
         unit={unitProfile}
-        user={userProfile}
+        user={currentUser}
         target={target}
         activeTab={activeTab}
         onNavigate={tab => setActiveTab(tab)}
+        onOpenLogin={() => setIsLoginModalOpen(true)}
+        onLogout={handleLogout}
       />
 
       <div className="flex-1 flex flex-col md:flex-row">
@@ -198,12 +230,13 @@ export default function HomePage() {
         />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full overflow-x-hidden">
-          {activeTab === 'dashboard' && (
+          {activeTab === 'dashboard' && currentUser && (
             <DashboardView
               target={target}
               articles={articles}
+              teamsProgress={teamsProgress}
               unit={unitProfile}
-              user={userProfile}
+              user={currentUser}
               onNavigate={(tab, id) => {
                 if (id) setSelectedArticleId(id);
                 setActiveTab(tab);
@@ -263,18 +296,26 @@ export default function HomePage() {
             />
           )}
 
-          {activeTab === 'settings' && (
+          {activeTab === 'settings' && currentUser && (
             <SettingsView
               unit={unitProfile}
-              user={userProfile}
+              user={currentUser}
               target={target}
               auditLogs={auditLogs}
               onSaveUnitProfile={handleSaveUnitProfile}
               onUpdateTargetCount={handleUpdateTargetCount}
+              onRefreshData={refreshData}
             />
           )}
         </main>
       </div>
+
+      {/* Login & Switch Account Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onLoginSuccess={handleLoginSuccess}
+        onClose={() => setIsLoginModalOpen(false)}
+      />
     </div>
   );
 }

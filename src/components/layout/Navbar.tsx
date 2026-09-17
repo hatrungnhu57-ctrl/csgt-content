@@ -1,18 +1,30 @@
 'use client';
 
 import React from 'react';
-import { Shield, Bell, User, Building2, CheckCircle2, AlertTriangle, Clock } from 'lucide-react';
-import { UnitProfile, UserProfile, MonthlyTarget } from '@/lib/store/types';
+import { Shield, Bell, User, Building2, CheckCircle2, AlertTriangle, Clock, LogOut, Users, ShieldAlert } from 'lucide-react';
+import { UnitProfile, UserAccount, MonthlyTarget } from '@/lib/store/types';
 
 interface NavbarProps {
   unit: UnitProfile;
-  user: UserProfile;
+  user: UserAccount | null;
   target: MonthlyTarget;
   activeTab: string;
   onNavigate: (tab: string) => void;
+  onOpenLogin: () => void;
+  onLogout: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ unit, user, target, activeTab, onNavigate }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  unit,
+  user,
+  target,
+  activeTab,
+  onNavigate,
+  onOpenLogin,
+  onLogout,
+}) => {
+  const isAdmin = user?.role === 'admin' || user?.role === 'commander';
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-[#0d1527]/95 backdrop-blur shadow-sm">
       <div className="flex h-16 items-center justify-between px-4 sm:px-6">
@@ -27,7 +39,7 @@ export const Navbar: React.FC<NavbarProps> = ({ unit, user, target, activeTab, o
                 CSGT <span className="text-amber-400">Content</span>
               </span>
               <span className="rounded bg-blue-900/60 px-2 py-0.5 text-[11px] font-semibold text-blue-300 border border-blue-700/50">
-                Nghiệp vụ TTATGT
+                {isAdmin ? 'Quản trị Chỉ huy' : 'Tài khoản Tổ công tác'}
               </span>
             </div>
             <p className="text-xs text-slate-400 truncate max-w-[280px] sm:max-w-md">
@@ -37,7 +49,7 @@ export const Navbar: React.FC<NavbarProps> = ({ unit, user, target, activeTab, o
         </div>
 
         {/* Center/Right: Target Indicator & Officer info */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {/* Target Mini-Pill */}
           <button
             onClick={() => onNavigate('dashboard')}
@@ -51,7 +63,7 @@ export const Navbar: React.FC<NavbarProps> = ({ unit, user, target, activeTab, o
           >
             <div className="flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5" />
-              <span>Chỉ tiêu T{target.month}:</span>
+              <span>{isAdmin ? 'Chỉ tiêu Đội T9:' : `Chỉ tiêu ${user?.team_name ? user.team_name.split('-')[0] : 'Tổ'} T9:`}</span>
             </div>
             <span className="font-bold">
               {target.completed_count}/{target.target_count} bài
@@ -63,16 +75,46 @@ export const Navbar: React.FC<NavbarProps> = ({ unit, user, target, activeTab, o
             )}
           </button>
 
-          {/* User Badge */}
-          <div className="flex items-center gap-2.5 pl-3 border-l border-slate-800">
-            <div className="h-8 w-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 font-semibold text-xs">
-              {user.rank ? user.rank.slice(0, 2) : 'CB'}
+          {/* User Profile Badge & Switch Account */}
+          {user ? (
+            <div className="flex items-center gap-2 pl-3 border-l border-slate-800">
+              <button
+                onClick={onOpenLogin}
+                className="flex items-center gap-2 p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 transition-colors text-left"
+                title="Bấm để đổi tài khoản Tổ / Chỉ huy"
+              >
+                <div className={`h-7 w-7 rounded-full flex items-center justify-center font-bold text-xs ${
+                  isAdmin ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50' : 'bg-blue-500/20 text-blue-300 border border-blue-500/50'
+                }`}>
+                  {isAdmin ? 'BCH' : user.username.toUpperCase()}
+                </div>
+                <div className="hidden sm:block">
+                  <div className="text-xs font-bold text-slate-100 flex items-center gap-1">
+                    {user.name}
+                    <span className="text-[10px] text-amber-400 font-normal">▼</span>
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    {isAdmin ? 'Chỉ huy đơn vị' : user.team_name || 'Tổ công tác'}
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={onLogout}
+                className="p-2 rounded-lg bg-slate-800 hover:bg-red-950 text-slate-400 hover:text-red-300 border border-slate-700 transition-colors"
+                title="Đăng xuất"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
             </div>
-            <div className="hidden sm:block text-left">
-              <div className="text-xs font-semibold text-slate-200">{user.name}</div>
-              <div className="text-[11px] text-slate-400">SH: {user.badge_number}</div>
-            </div>
-          </div>
+          ) : (
+            <button
+              onClick={onOpenLogin}
+              className="px-4 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs shadow-md shadow-blue-950"
+            >
+              Đăng nhập
+            </button>
+          )}
         </div>
       </div>
     </header>

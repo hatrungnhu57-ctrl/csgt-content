@@ -88,7 +88,10 @@ export const ArticleWriterWorkflow: React.FC<ArticleWriterWorkflowProps> = ({
 
       const newArticle: Article = {
         id: currentArticle?.id || `art-${Date.now()}`,
-        user_id: 'user-001',
+        user_id: currentArticle?.user_id || 'acc-admin',
+        author_name: currentArticle?.author_name || 'Tổ công tác',
+        team_id: currentArticle?.team_id,
+        team_name: currentArticle?.team_name,
         unit_id: unit.id,
         title: output.title,
         sapo: output.sapo,

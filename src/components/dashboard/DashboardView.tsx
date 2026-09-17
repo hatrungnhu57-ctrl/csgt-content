@@ -16,14 +16,18 @@ import {
   ShieldCheck,
   BarChart3,
   Calendar,
+  Users,
+  Award,
+  AlertCircle,
 } from 'lucide-react';
-import { Article, MonthlyTarget, UnitProfile, UserProfile } from '@/lib/store/types';
+import { Article, MonthlyTarget, TeamTargetProgress, UnitProfile, UserAccount } from '@/lib/store/types';
 
 interface DashboardViewProps {
   target: MonthlyTarget;
   articles: Article[];
+  teamsProgress: TeamTargetProgress[];
   unit: UnitProfile;
-  user: UserProfile;
+  user: UserAccount;
   onNavigate: (tab: string, contextId?: string) => void;
   onNewArticle: () => void;
 }
@@ -31,17 +35,20 @@ interface DashboardViewProps {
 export const DashboardView: React.FC<DashboardViewProps> = ({
   target,
   articles,
+  teamsProgress,
   unit,
   user,
   onNavigate,
   onNewArticle,
 }) => {
-  const currentMonthArticles = articles.filter(a => {
-    const d = new Date(a.created_at || a.published_at || Date.now());
-    return d.getMonth() + 1 === target.month && d.getFullYear() === target.year;
-  });
+  const isAdmin = user.role === 'admin' || user.role === 'commander';
 
-  const recentArticles = [...articles].sort(
+  // Filter recent articles based on role
+  const displayedArticles = isAdmin
+    ? articles
+    : articles.filter(a => a.team_id === user.team_id || a.user_id === user.id);
+
+  const recentArticles = [...displayedArticles].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   ).slice(0, 8);
 
@@ -58,7 +65,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     'Khác': 0,
   };
 
-  articles.forEach(a => {
+  displayedArticles.forEach(a => {
     switch (a.article_type) {
       case 'nong_do_con':
         topicDistribution['Nồng độ cồn']++;
@@ -98,17 +105,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     <div className="space-y-6 pb-12">
       {/* 1. Monthly Target & Deadline Alert (Section VI) */}
       <div className="rounded-xl border border-slate-800 bg-[#11192e] p-6 shadow-lg relative overflow-hidden">
-        {/* Background gradient banner */}
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-amber-500 to-emerald-500" />
 
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-400 bg-blue-950/80 px-2.5 py-1 rounded border border-blue-800/50">
+              <span className="text-xs font-bold uppercase tracking-wider text-blue-400 bg-blue-950/80 px-2.5 py-1 rounded border border-blue-800/60">
                 CHỈ TIÊU CÔNG TÁC THÁNG {target.month < 10 ? `0${target.month}` : target.month}/{target.year}
               </span>
               <span className="text-xs text-slate-400">
-                • Cán bộ: <span className="font-semibold text-slate-200">{user.name}</span> ({unit.short_name})
+                • {isAdmin ? 'Tài khoản Quản trị: ' : 'Đang đăng nhập: '}
+                <strong className="text-amber-400">{user.name}</strong>
               </span>
             </div>
 
@@ -133,9 +140,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <span>
                   {target.deadline_alert_level === 'urgent_warning' ? (
-                    <strong>CẢNH BÁO KHẨN: Sắp kết thúc tháng! Tháng này còn thiếu {missingCount} tin/bài để hoàn thành chỉ tiêu.</strong>
+                    <strong>CẢNH BÁO KHẨN: Sắp kết thúc tháng! Còn thiếu {missingCount} tin/bài để hoàn thành chỉ tiêu.</strong>
                   ) : target.deadline_alert_level === 'mild_warning' ? (
-                    <span>Nhắc nhở: Đã qua ngày 20 của tháng, cán bộ còn thiếu {missingCount} tin/bài để đạt chỉ tiêu giao.</span>
+                    <span>Nhắc nhở: Đã qua ngày 20 của tháng, đơn vị còn thiếu {missingCount} tin/bài để đạt chỉ tiêu giao.</span>
                   ) : (
                     <span>Tháng này còn thiếu {missingCount} tin/bài (còn {target.days_left_in_month} ngày).</span>
                   )}
@@ -144,7 +151,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             ) : (
               <div className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg bg-emerald-950/80 border border-emerald-700 text-emerald-300">
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
-                <span>Xuất sắc! Cán bộ đã hoàn thành 100% chỉ tiêu tin bài tuyên truyền của tháng {target.month}/{target.year}.</span>
+                <span>Xuất sắc! Đã hoàn thành 100% chỉ tiêu tin bài tuyên truyền của tháng {target.month}/{target.year}.</span>
               </div>
             )}
           </div>
@@ -152,7 +159,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* Progress Bar & Breakdown */}
           <div className="lg:w-80 space-y-3 bg-slate-900/90 p-4 rounded-xl border border-slate-800">
             <div className="flex justify-between text-xs font-medium text-slate-300">
-              <span>Tiến độ thực hiện</span>
+              <span>{isAdmin ? 'Tiến độ toàn Đội' : 'Tiến độ của Tổ'}</span>
               <span className="font-bold text-amber-400">{target.completed_count}/{target.target_count} bài</span>
             </div>
             <div className="w-full bg-slate-800 rounded-full h-3 overflow-hidden p-0.5 border border-slate-700">
@@ -186,7 +193,82 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* 2. Quick Action Buttons (Section VI.2) */}
+      {/* 2. CHỈ HUY THEO DÕI CÁC TỔ (ADMIN TEAM MONITORING CARD) */}
+      {isAdmin && teamsProgress.length > 0 && (
+        <div className="rounded-xl border border-blue-800/60 bg-[#121c33] p-5 space-y-4 shadow-lg">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-amber-400" />
+              <div>
+                <h2 className="font-bold text-white text-sm">BẢNG THEO DÕI CHỈ TIÊU CÁC TỔ CÔNG TÁC (DÀNH CHO CHỈ HUY)</h2>
+                <p className="text-xs text-slate-400">Theo dõi tiến độ từng tổ đã tạo tin bài và đạt chỉ tiêu 3 bài/tháng</p>
+              </div>
+            </div>
+            <button
+              onClick={() => onNavigate('settings')}
+              className="text-xs text-blue-400 hover:text-blue-300 font-medium"
+            >
+              Quản lý tài khoản & Tổ →
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {teamsProgress.map(tp => {
+              const pct = Math.min(100, Math.round((tp.completed_count / tp.target_count) * 100));
+              const missing = Math.max(0, tp.target_count - tp.completed_count);
+
+              return (
+                <div
+                  key={tp.team_id}
+                  className={`p-4 rounded-xl border transition-all ${
+                    tp.is_achieved
+                      ? 'bg-emerald-950/30 border-emerald-600/70'
+                      : 'bg-slate-900 border-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-slate-200 truncate">{tp.team_name.split('-')[0]}</span>
+                    {tp.is_achieved ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700">
+                        ✓ ĐẠT CHỈ TIÊU
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800">
+                        Thiếu {missing} bài
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="text-xs text-slate-400 mb-3 line-clamp-1">{tp.team_name}</div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-slate-400">Tiến độ:</span>
+                      <span className={tp.is_achieved ? 'text-emerald-400' : 'text-amber-400'}>
+                        {tp.completed_count} / {tp.target_count} bài ({pct}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${tp.is_achieved ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                        style={{ width: `${Math.max(5, pct)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between text-[11px] text-slate-400 pt-3 mt-3 border-t border-slate-800/80">
+                    <span>Đã đăng: <strong className="text-emerald-400">{tp.completed_count}</strong></span>
+                    <span>Chờ duyệt: <strong className="text-amber-400">{tp.in_review_count}</strong></span>
+                    <span>Bản nháp: <strong className="text-slate-300">{tp.draft_count}</strong></span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 3. Quick Action Buttons (Section VI.2) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <button
           onClick={onNewArticle}
@@ -230,7 +312,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <div className="text-left">
               <div className="font-bold text-sm text-slate-100">KHO TIN BÀI</div>
-              <div className="text-[11px] text-slate-400">{articles.length} bài đã lưu trữ</div>
+              <div className="text-[11px] text-slate-400">{displayedArticles.length} bài đã lưu trữ</div>
             </div>
           </div>
           <ArrowRight className="h-5 w-5 text-slate-500 group-hover:translate-x-1 transition-transform" />
@@ -253,7 +335,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </button>
       </div>
 
-      {/* 3. Grid: Recent Articles & Topic Diversity Warning (Section VI.4 & VI.5) */}
+      {/* 4. Grid: Recent Articles & Topic Diversity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Recent Articles */}
         <div className="lg:col-span-2 rounded-xl border border-slate-800 bg-[#111827] p-5 space-y-4">
@@ -308,6 +390,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             ? 'Chờ kiểm duyệt'
                             : 'Bản nháp'}
                         </span>
+                        <span className="text-[11px] font-bold text-blue-400 bg-slate-950 px-1.5 py-0.5 rounded">
+                          {art.team_name ? art.team_name.split('-')[0] : 'Đội'}
+                        </span>
                         <span className="text-[11px] font-medium text-slate-400 truncate">
                           Chuyên đề: <strong className="text-slate-300">{art.topic || 'TTATGT'}</strong>
                         </span>
@@ -350,7 +435,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
-        {/* Right 1 Col: Topic Distribution & Anti-Repetition Detector (Section VI.5) */}
+        {/* Right 1 Col: Topic Distribution */}
         <div className="rounded-xl border border-slate-800 bg-[#111827] p-5 space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
             <BarChart3 className="h-5 w-5 text-amber-400" />
@@ -390,18 +475,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
               );
             })}
-          </div>
-
-          {/* Diversity Suggestion Box */}
-          <div className="p-3.5 rounded-lg bg-amber-950/30 border border-amber-700/50 space-y-1.5 text-xs">
-            <div className="font-bold text-amber-300 flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4" />
-              <span>Gợi ý cân đối chuyên đề</span>
-            </div>
-            <p className="text-slate-300 text-[11px] leading-relaxed">
-              Tháng này đơn vị đã viết tốt về <strong className="text-white">Nồng độ cồn</strong> và <strong className="text-white">Tốc độ</strong>.
-              Nên ưu tiên thêm 01 bài về <strong className="text-amber-300">An toàn giao thông lứa tuổi học sinh</strong> hoặc <strong className="text-amber-300">Hỗ trợ nhân dân</strong> để hoàn thiện chỉ tiêu.
-            </p>
           </div>
         </div>
       </div>
