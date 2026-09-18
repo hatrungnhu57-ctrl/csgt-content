@@ -341,6 +341,8 @@ export interface AuditLogEntry {
   action:
     | 'USER_LOGIN'
     | 'USER_CREATED'
+    | 'USER_UPDATED'
+    | 'USER_DELETED'
     | 'ARTICLE_CREATED'
     | 'ARTICLE_EDITED'
     | 'AI_GENERATED'

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Shield, Lock, User, Key, ArrowRight, AlertCircle, Users, CheckCircle2 } from 'lucide-react';
+import { Shield, Lock, User, Key, ArrowRight, AlertCircle, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { UserAccount } from '@/lib/store/types';
 import { store } from '@/lib/store';
 
@@ -14,134 +14,155 @@ interface LoginModalProps {
 export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onLoginSuccess, onClose }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [selectedQuickAcc, setSelectedQuickAcc] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
-
-  const accounts = store.getAccounts();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const user = store.login(username, password);
-    if (user) {
-      onLoginSuccess(user);
-    } else {
-      setError('Tên đăng nhập hoặc mật khẩu không chính xác!');
-    }
-  };
 
-  const handleQuickLogin = (acc: UserAccount) => {
-    setUsername(acc.username);
-    setPassword(acc.password);
-    setSelectedQuickAcc(acc.id);
-    const user = store.login(acc.username, acc.password);
-    if (user) {
-      onLoginSuccess(user);
+    const cleanUser = username.trim();
+    const cleanPass = password.trim();
+
+    if (!cleanUser || !cleanPass) {
+      setError('Vui lòng nhập đầy đủ Tên đăng nhập và Mật khẩu.');
+      return;
     }
+
+    setIsLoading(true);
+
+    setTimeout(() => {
+      const user = store.login(cleanUser, cleanPass);
+      setIsLoading(false);
+
+      if (user) {
+        onLoginSuccess(user);
+      } else {
+        setError('Tên đăng nhập hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại!');
+      }
+    }, 250);
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-[#0f172a] p-6 space-y-6 shadow-2xl relative overflow-hidden">
-        {/* Top police badge banner */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-amber-500 to-emerald-500" />
+    <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 selection:bg-amber-500 selection:text-slate-950">
+      <div className="w-full max-w-md rounded-2xl border border-slate-700/80 bg-[#0d1527] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] relative overflow-hidden">
+        {/* Top police security stripe */}
+        <div className="h-1.5 w-full bg-gradient-to-r from-blue-700 via-amber-400 to-red-600" />
 
-        <div className="text-center space-y-2">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 shadow-lg border border-amber-400/50 mb-1">
-            <Shield className="h-7 w-7 fill-amber-300" />
-          </div>
-          <h2 className="text-xl font-black text-white tracking-tight">
-            ĐĂNG NHẬP HỆ THỐNG CSGT
-          </h2>
-          <p className="text-xs text-slate-400">
-            Trợ lý Quản lý & Biên tập Tin bài Tuyên truyền TTATGT
-          </p>
-        </div>
-
-        {/* Quick select demo accounts */}
-        <div className="space-y-2">
-          <label className="text-[11px] font-bold text-slate-400 uppercase block">
-            Chọn nhanh tài khoản phân quyền:
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {accounts.map(acc => {
-              const isAdmin = acc.role === 'admin';
-              return (
-                <button
-                  key={acc.id}
-                  type="button"
-                  onClick={() => handleQuickLogin(acc)}
-                  className={`p-2.5 rounded-lg border text-left transition-all text-xs flex flex-col justify-between ${
-                    isAdmin
-                      ? 'bg-amber-950/40 border-amber-600/70 hover:bg-amber-900/60 text-amber-200'
-                      : 'bg-slate-900 border-slate-800 hover:bg-slate-800 text-slate-300'
-                  }`}
-                >
-                  <div className="font-bold truncate text-white">{acc.name}</div>
-                  <div className="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
-                    <span>TK: <strong className="text-amber-400">{acc.username}</strong></span>
-                    <span className="font-mono text-[9px] bg-slate-800 px-1 py-0.5 rounded">mk: 123</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="relative flex py-1 items-center">
-          <div className="flex-grow border-t border-slate-800"></div>
-          <span className="flex-shrink mx-3 text-[10px] text-slate-500 uppercase font-bold">Hoặc nhập thông tin</span>
-          <div className="flex-grow border-t border-slate-800"></div>
-        </div>
-
-        {/* Login Form */}
-        <form onSubmit={handleLogin} className="space-y-4 text-xs">
-          {error && (
-            <div className="p-2.5 rounded-lg bg-red-950/80 border border-red-700 text-red-300 flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{error}</span>
+        <div className="p-7 space-y-6">
+          {/* Official Emblem & Title Header */}
+          <div className="flex flex-col items-center text-center space-y-3">
+            <div className="relative">
+              <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 p-0.5 shadow-xl shadow-amber-500/20">
+                <div className="h-full w-full rounded-[14px] bg-slate-950 flex items-center justify-center">
+                  <Shield className="h-9 w-9 text-amber-400 fill-amber-400/20" />
+                </div>
+              </div>
+              <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-emerald-500 border-2 border-[#0d1527] flex items-center justify-center shadow-sm">
+                <Lock className="h-2.5 w-2.5 text-slate-950" />
+              </div>
             </div>
-          )}
 
-          <div className="space-y-1.5">
-            <label className="font-semibold text-slate-300 flex items-center gap-1.5">
-              <User className="h-3.5 w-3.5 text-slate-400" />
-              Tên đăng nhập:
-            </label>
-            <input
-              type="text"
-              placeholder="VD: admin, to1, to2..."
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white focus:border-blue-500 focus:outline-none"
-              required
-            />
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-[10px] font-bold text-amber-300 tracking-wider uppercase mb-1.5">
+                CÔNG AN NHÂN DÂN • CẢNH SÁT GIAO THÔNG
+              </div>
+              <h2 className="text-xl font-extrabold text-white tracking-tight">
+                ĐĂNG NHẬP HỆ THỐNG
+              </h2>
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed max-w-xs mx-auto">
+                Trợ lý Nghiệp vụ & Quản lý Biên tập Tin bài Tuyên truyền TTATGT Đường bộ
+              </p>
+            </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="font-semibold text-slate-300 flex items-center gap-1.5">
-              <Key className="h-3.5 w-3.5 text-slate-400" />
-              Mật khẩu:
-            </label>
-            <input
-              type="password"
-              placeholder="Mật khẩu (mặc định: 123)"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white focus:border-blue-500 focus:outline-none"
-              required
-            />
-          </div>
+          {/* Form Login */}
+          <form onSubmit={handleLogin} className="space-y-4 text-xs">
+            {error && (
+              <div className="p-3 rounded-xl bg-red-950/80 border border-red-800 text-red-200 flex items-start gap-2.5 animate-in fade-in duration-200 shadow-sm">
+                <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+                <span className="leading-snug text-[11.5px] font-medium">{error}</span>
+              </div>
+            )}
 
-          <button
-            type="submit"
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-gradient-to-r from-blue-700 to-blue-800 hover:from-blue-600 hover:to-blue-700 text-white font-bold text-xs shadow-lg shadow-blue-950 transition-all"
-          >
-            ĐĂNG NHẬP VÀO HỆ THỐNG <ArrowRight className="h-4 w-4" />
-          </button>
-        </form>
+            <div className="space-y-1.5">
+              <label className="font-bold text-slate-300 flex items-center gap-1.5 text-[11px] uppercase tracking-wider">
+                <User className="h-3.5 w-3.5 text-amber-400" />
+                Tài khoản / Số hiệu CBCS:
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Nhập tên đăng nhập được cấp..."
+                  value={username}
+                  onChange={e => {
+                    setUsername(e.target.value);
+                    if (error) setError('');
+                  }}
+                  autoFocus
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900/90 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-amber-400 focus:bg-slate-900 focus:ring-1 focus:ring-amber-400/30 focus:outline-none transition-all shadow-inner"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-slate-300 flex items-center gap-1.5 text-[11px] uppercase tracking-wider">
+                  <Key className="h-3.5 w-3.5 text-amber-400" />
+                  Mật khẩu xác thực:
+                </label>
+              </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Nhập mật khẩu..."
+                  value={password}
+                  onChange={e => {
+                    setPassword(e.target.value);
+                    if (error) setError('');
+                  }}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900/90 pl-3.5 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:border-amber-400 focus:bg-slate-900 focus:ring-1 focus:ring-amber-400/30 focus:outline-none transition-all shadow-inner"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-0.5"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full mt-2 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-700 via-blue-800 to-indigo-800 hover:from-blue-600 hover:via-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-lg shadow-blue-950/80 border border-blue-500/30 transition-all hover:shadow-blue-900/50 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:pointer-events-none cursor-pointer"
+            >
+              {isLoading ? (
+                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  <span>ĐĂNG NHẬP HỆ THỐNG</span>
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Security footnote */}
+          <div className="pt-2 border-t border-slate-800/80 text-center">
+            <p className="text-[10px] text-slate-400 flex items-center justify-center gap-1.5">
+              <Shield className="h-3 w-3 text-amber-500/70" />
+              <span>Hệ thống phân quyền nghiệp vụ nội bộ • Bảo mật thông tin</span>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

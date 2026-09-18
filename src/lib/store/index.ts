@@ -296,7 +296,12 @@ class StoreManager {
       return DEFAULT_ACCOUNTS;
     }
     try {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        this.saveAccounts(DEFAULT_ACCOUNTS);
+        return DEFAULT_ACCOUNTS;
+      }
+      return parsed;
     } catch {
       return DEFAULT_ACCOUNTS;
     }
@@ -307,12 +312,31 @@ class StoreManager {
     localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
   }
 
-  createAccount(account: Omit<UserAccount, 'id'>): UserAccount {
+  createAccount(account: Omit<UserAccount, 'id'>): { success: boolean; account?: UserAccount; error?: string } {
+    const cleanUsername = account.username.trim().toLowerCase();
+    if (!cleanUsername) {
+      return { success: false, error: 'Tên đăng nhập không được để trống!' };
+    }
+    if (!account.password || !account.password.trim()) {
+      return { success: false, error: 'Mật khẩu không được để trống!' };
+    }
+
     const accounts = this.getAccounts();
+    const existingIndex = accounts.findIndex(
+      a => a.username.trim().toLowerCase() === cleanUsername
+    );
+
+    if (existingIndex >= 0) {
+      return { success: false, error: `Tên đăng nhập "${account.username}" đã tồn tại trên hệ thống!` };
+    }
+
     const newAcc: UserAccount = {
       ...account,
+      username: cleanUsername,
+      password: account.password.trim(),
       id: `acc-${Date.now()}`,
     };
+
     accounts.push(newAcc);
     this.saveAccounts(accounts);
     this.addAuditLog({
@@ -320,10 +344,50 @@ class StoreManager {
       user_id: 'admin',
       user_name: 'Chỉ huy Đội',
       action: 'USER_CREATED',
-      description: `Đã tạo tài khoản mới: ${newAcc.username} (${newAcc.name})`,
+      description: `Đã cấp tài khoản mới: ${newAcc.username} (${newAcc.name})`,
       timestamp: new Date().toISOString(),
     });
-    return newAcc;
+    return { success: true, account: newAcc };
+  }
+
+  updateAccount(accountId: string, updates: Partial<UserAccount>): { success: boolean; error?: string } {
+    const accounts = this.getAccounts();
+    const index = accounts.findIndex(a => a.id === accountId);
+    if (index === -1) {
+      return { success: false, error: 'Không tìm thấy tài khoản!' };
+    }
+
+    if (updates.username) {
+      const cleanUser = updates.username.trim().toLowerCase();
+      const duplicate = accounts.find((a, i) => i !== index && a.username.trim().toLowerCase() === cleanUser);
+      if (duplicate) {
+        return { success: false, error: `Tên đăng nhập "${updates.username}" đã được sử dụng bởi tài khoản khác!` };
+      }
+      updates.username = cleanUser;
+    }
+
+    if (updates.password) {
+      updates.password = updates.password.trim();
+    }
+
+    accounts[index] = { ...accounts[index], ...updates };
+    this.saveAccounts(accounts);
+    this.addAuditLog({
+      id: `log-${Date.now()}`,
+      user_id: 'admin',
+      user_name: 'Chỉ huy Đội',
+      action: 'USER_UPDATED',
+      description: `Đã cập nhật thông tin tài khoản: ${accounts[index].username} (${accounts[index].name})`,
+      timestamp: new Date().toISOString(),
+    });
+
+    // If updating currently logged in user, refresh session
+    const current = this.getCurrentUser();
+    if (current && current.id === accountId) {
+      this.setCurrentUser(accounts[index]);
+    }
+
+    return { success: true };
   }
 
   deleteAccount(accountId: string): void {
@@ -353,10 +417,14 @@ class StoreManager {
     }
   }
 
-  login(username: string, password: string):UserAccount | null {
+  login(username: string, password: string): UserAccount | null {
+    const cleanUser = username ? username.trim().toLowerCase() : '';
+    const cleanPass = password ? password.trim() : '';
+    if (!cleanUser || !cleanPass) return null;
+
     const accounts = this.getAccounts();
     const found = accounts.find(
-      a => a.username.toLowerCase() === username.trim().toLowerCase() && a.password === password.trim()
+      a => a.username.trim().toLowerCase() === cleanUser && a.password.trim() === cleanPass
     );
     if (found) {
       this.setCurrentUser(found);
