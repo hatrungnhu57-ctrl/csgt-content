@@ -24,6 +24,7 @@ import {
   Check,
   X,
   BadgeCheck,
+  Sparkles,
 } from 'lucide-react';
 import { UnitProfile, UserAccount, AuditLogEntry, MonthlyTarget, TeamGroup } from '@/lib/store/types';
 import { store } from '@/lib/store';
@@ -801,6 +802,45 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 onChange={e => setUnitForm({ ...unitForm, channel_name: e.target.value })}
                 className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs text-white focus:outline-none"
               />
+            </div>
+
+            {/* Smart AI Engine & API Key Setting */}
+            <div className="md:col-span-2 pt-4 border-t border-slate-800 space-y-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-amber-400" />
+                <h3 className="text-xs font-bold text-white uppercase">CẤU HÌNH BỘ NÃO AI THÔNG MINH (TÙY CHỌN ONLINE)</h3>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Mặc định hệ thống sử dụng <strong>Rule-Based Engine (Chạy an toàn Offline 100%)</strong>. Nếu đơn vị có API Key của các mô hình AI trực tuyến, bạn có thể điền vào dưới đây để kích hoạt văn phong báo chí thông minh và linh hoạt hơn.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-300">Nhà cung cấp AI:</label>
+                  <select
+                    value={unitForm.ai_provider || 'rule_based'}
+                    onChange={e => setUnitForm({ ...unitForm, ai_provider: e.target.value as any })}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs text-white focus:outline-none font-medium"
+                  >
+                    <option value="rule_based">Rule-Based CSGT (Offline - Khuyên dùng nội bộ)</option>
+                    <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
+                    <option value="claude">Anthropic Claude (Claude 3.5 Sonnet)</option>
+                    <option value="gemini">Google Gemini (Gemini 1.5 Flash)</option>
+                    <option value="deepseek">DeepSeek (DeepSeek-V3)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1 md:col-span-2">
+                  <label className="text-xs font-semibold text-slate-300">API Key trực tuyến (Bảo mật):</label>
+                  <input
+                    type="password"
+                    placeholder="Nhập sk-..., anthropic-..., gemini-... (nếu có)"
+                    value={unitForm.api_key || ''}
+                    onChange={e => setUnitForm({ ...unitForm, api_key: e.target.value })}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs text-white focus:outline-none font-mono"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </form>

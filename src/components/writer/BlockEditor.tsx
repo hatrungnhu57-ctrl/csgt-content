@@ -20,21 +20,27 @@ import {
   Calendar,
   MapPin,
   Send,
+  Image as ImageIcon,
 } from 'lucide-react';
-import { Article, SourceData } from '@/lib/store/types';
+import { Article, SourceData, UnitProfile } from '@/lib/store/types';
 import { getAIProvider } from '@/lib/ai';
+import { generatePoliceWordDocument } from '@/lib/utils/docx-export';
 
 interface BlockEditorProps {
   article: Article;
+  unit?: UnitProfile;
   onUpdateArticle: (updated: Article) => void;
   onProceedToReview: () => void;
+  onOpenWatermarkModal?: () => void;
   saveStatusText?: string;
 }
 
 export const BlockEditor: React.FC<BlockEditorProps> = ({
   article,
+  unit,
   onUpdateArticle,
   onProceedToReview,
+  onOpenWatermarkModal,
   saveStatusText = 'Đã lưu tự động',
 }) => {
   const [viewMode, setViewMode] = useState<'editor' | 'preview'>('preview');
@@ -149,15 +155,37 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
         <div className="flex items-center gap-2.5">
           <button
             onClick={handleCopyFullArticle}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold border border-slate-700 transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold border border-slate-700 transition-colors shadow-sm"
           >
             {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
-            {copied ? 'Đã sao chép!' : 'SAO CHÉP BÀI'}
+            {copied ? 'Đã sao chép!' : 'SAO CHÉP'}
           </button>
+
+          {unit && (
+            <button
+              onClick={() => generatePoliceWordDocument(article, unit)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-950/90 hover:bg-blue-900 text-blue-200 hover:text-white text-xs font-bold border border-blue-700/70 transition-colors shadow-sm"
+              title="Xuất file Word (.docx) chuẩn thể thức BCA"
+            >
+              <FileText className="h-3.5 w-3.5 text-blue-300" />
+              <span>XUẤT WORD</span>
+            </button>
+          )}
+
+          {onOpenWatermarkModal && (
+            <button
+              onClick={onOpenWatermarkModal}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-950/90 hover:bg-amber-900 text-amber-200 hover:text-white text-xs font-bold border border-amber-700/70 transition-colors shadow-sm"
+              title="Đóng dấu Logo CSGT và che mặt ảnh"
+            >
+              <ImageIcon className="h-3.5 w-3.5 text-amber-300" />
+              <span>ĐÓNG DẤU ẢNH</span>
+            </button>
+          )}
 
           <button
             onClick={onProceedToReview}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 hover:from-blue-600 hover:to-indigo-600 text-white text-xs font-bold shadow-lg shadow-blue-950 border border-blue-500/40 transition-all cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 hover:from-blue-600 hover:to-indigo-600 text-white text-xs font-bold shadow-lg shadow-blue-950 border border-blue-500/40 transition-all cursor-pointer"
           >
             <ShieldCheck className="h-4 w-4 text-amber-300" />
             TIẾP TỤC: KIỂM DUYỆT & GỬI DUYỆT

@@ -33,18 +33,18 @@ const STORAGE_KEYS = {
 // Default Unit Profile with 3 default Teams
 export const DEFAULT_UNIT_PROFILE: UnitProfile = {
   id: 'unit-01',
-  full_name: 'Đội Cảnh sát giao thông - trật tự, Công an huyện',
-  short_name: 'CSGT Đơn vị',
-  parent_unit: 'Công an tỉnh / thành phố',
-  department: 'Đội Cảnh sát giao thông - trật tự',
-  location: 'Địa bàn quản lý',
-  force_display_name: 'Lực lượng Cảnh sát giao thông Công an huyện',
-  channel_name: 'Trang Thông tin CSGT Công an huyện',
-  default_hashtags: ['#CSGT', '#ATGT', '#CongAnNhanDan', '#ViBinhYenCuocSong'],
+  full_name: 'Phòng Cảnh sát giao thông - Công an tỉnh Vĩnh Long',
+  short_name: 'CSGT Đường Bộ - PC08 tỉnh Vĩnh Long',
+  parent_unit: 'Công an tỉnh Vĩnh Long',
+  department: 'Phòng Cảnh sát giao thông (PC08)',
+  location: 'Địa bàn tỉnh Vĩnh Long',
+  force_display_name: 'Lực lượng Cảnh sát giao thông Công an tỉnh Vĩnh Long',
+  channel_name: 'Trang Thông tin CSGT Công an tỉnh Vĩnh Long',
+  default_hashtags: ['#CSGT', '#ATGT', '#PC08VinhLong', '#CongAnVinhLong', '#ViBinhYenCuocSong'],
   teams: [
     {
       id: 'to-1',
-      name: 'Tổ 1 - Tuần tra kiểm soát tuyến Quốc lộ',
+      name: 'Tổ 1 - Tuần tra kiểm soát tuyến Quốc lộ 1A & Quốc lộ 53',
       leader_name: 'Đại úy Nguyễn Văn A',
       member_count: 6,
       target_count: 3,
@@ -64,6 +64,7 @@ export const DEFAULT_UNIT_PROFILE: UnitProfile = {
       target_count: 3,
     },
   ],
+  ai_provider: 'rule_based',
   created_at: '2026-09-01T08:00:00.000Z',
   updated_at: '2026-09-01T08:00:00.000Z',
 };
@@ -580,7 +581,13 @@ class StoreManager {
       return DEFAULT_UNIT_PROFILE;
     }
     try {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (parsed.short_name === 'CSGT Đơn vị' || !parsed.short_name) {
+        const updated = { ...DEFAULT_UNIT_PROFILE, ...parsed, short_name: DEFAULT_UNIT_PROFILE.short_name, full_name: DEFAULT_UNIT_PROFILE.full_name, parent_unit: DEFAULT_UNIT_PROFILE.parent_unit };
+        this.saveUnitProfile(updated);
+        return updated;
+      }
+      return parsed;
     } catch {
       return DEFAULT_UNIT_PROFILE;
     }

@@ -32,22 +32,24 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="flex h-16 items-center justify-between px-4 sm:px-6">
         {/* Left: Brand & Badges */}
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 text-white shadow-md border border-amber-400/40 cursor-pointer" onClick={() => onNavigate('dashboard')}>
-            <Shield className="h-6 w-6 text-slate-950 fill-amber-300" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900/90 shadow-md border border-amber-500/40 cursor-pointer overflow-hidden p-0.5" onClick={() => onNavigate('dashboard')}>
+            <img src="/logo-csgt.png" alt="Logo CSGT" className="h-full w-full object-contain" onError={(e) => {
+              (e.target as HTMLElement).style.display = 'none';
+            }} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-lg tracking-tight text-white flex items-center gap-1.5 cursor-pointer" onClick={() => onNavigate('dashboard')}>
+              <span className="font-extrabold text-lg tracking-tight text-white flex items-center gap-1.5 cursor-pointer" onClick={() => onNavigate('dashboard')}>
                 CSGT <span className="text-amber-400">Content</span>
               </span>
-              <span className={`rounded px-2 py-0.5 text-[11px] font-semibold border ${
-                isAdmin ? 'bg-amber-950/80 text-amber-300 border-amber-700/60' : 'bg-blue-900/60 text-blue-300 border-blue-700/50'
+              <span className={`rounded px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wider border ${
+                isAdmin ? 'bg-amber-950/90 text-amber-300 border-amber-600/70' : 'bg-blue-950/90 text-blue-300 border-blue-700/60'
               }`}>
                 {isAdmin ? 'Quản trị Chỉ huy' : 'Tài khoản Tổ công tác'}
               </span>
             </div>
-            <p className="text-xs text-slate-400 truncate max-w-[280px] sm:max-w-md">
-              {unit.short_name || unit.full_name} • {unit.parent_unit}
+            <p className="text-xs font-medium text-amber-300/90 truncate max-w-[320px] sm:max-w-xl">
+              {unit.short_name || 'CSGT Đường Bộ - PC08 tỉnh Vĩnh Long'} • {unit.parent_unit || 'Công an tỉnh Vĩnh Long'}
             </p>
           </div>
         </div>

@@ -16,25 +16,32 @@ import {
   Download,
   ShieldCheck,
   ExternalLink,
+  FileText,
+  Image as ImageIcon,
 } from 'lucide-react';
-import { Article, ArticleStatus, ArticleType, UserAccount } from '@/lib/store/types';
+import { Article, ArticleStatus, ArticleType, UnitProfile, UserAccount } from '@/lib/store/types';
+import { generatePoliceWordDocument } from '@/lib/utils/docx-export';
 
 interface ArticleLibraryViewProps {
   articles: Article[];
+  unit: UnitProfile;
   user?: UserAccount | null;
   onOpenArticle: (articleId: string) => void;
   onEditArticle: (articleId: string) => void;
   onGenerateVideo: (articleId: string) => void;
   onDeleteArticle: (articleId: string) => void;
+  onOpenWatermarkModal?: () => void;
 }
 
 export const ArticleLibraryView: React.FC<ArticleLibraryViewProps> = ({
   articles,
+  unit,
   user,
   onOpenArticle,
   onEditArticle,
   onGenerateVideo,
   onDeleteArticle,
+  onOpenWatermarkModal,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
@@ -103,6 +110,10 @@ export const ArticleLibraryView: React.FC<ArticleLibraryViewProps> = ({
     URL.revokeObjectURL(url);
   };
 
+  const handleExportWord = (art: Article) => {
+    generatePoliceWordDocument(art, unit);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -118,6 +129,17 @@ export const ArticleLibraryView: React.FC<ArticleLibraryViewProps> = ({
             Lưu đầy đủ source_data, public_content, lịch sử phiên bản và liên kết xuất bản.
           </p>
         </div>
+
+        {onOpenWatermarkModal && (
+          <button
+            type="button"
+            onClick={onOpenWatermarkModal}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs font-bold shadow-lg shadow-amber-950 border border-amber-500/40 cursor-pointer"
+          >
+            <ImageIcon className="h-4 w-4" />
+            <span>ĐÓNG DẤU LOGO & CHE MẶT ẢNH CSGT</span>
+          </button>
+        )}
       </div>
 
       {/* Filter & Search Bar */}
@@ -289,6 +311,14 @@ export const ArticleLibraryView: React.FC<ArticleLibraryViewProps> = ({
                       title="Xuất file TXT"
                     >
                       <Download className="h-4 w-4" />
+                    </button>
+
+                    <button
+                      onClick={() => handleExportWord(art)}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-950/90 hover:bg-blue-900 text-blue-300 hover:text-white border border-blue-700/70 text-xs font-bold"
+                      title="Xuất văn bản Word (.docx chuẩn BCA)"
+                    >
+                      <FileText className="h-3.5 w-3.5" /> Word
                     </button>
 
                     <button

@@ -17,26 +17,32 @@ import {
   ExternalLink,
   History,
   Scale,
+  Image as ImageIcon,
 } from 'lucide-react';
-import { Article, ArticleReviewSummary, ReviewChecklist } from '@/lib/store/types';
+import { Article, ArticleReviewSummary, ReviewChecklist, UnitProfile } from '@/lib/store/types';
 import { factCheckArticleWithSource } from '@/lib/guardrails/fact-checker';
 import { reviewArticlePrivacy } from '@/lib/guardrails/privacy';
 import { reviewArticleLegal } from '@/lib/guardrails/legal';
 import { reviewUnitNames } from '@/lib/guardrails/unit-name';
 import { reviewAccidentContent } from '@/lib/guardrails/accident';
+import { generatePoliceWordDocument } from '@/lib/utils/docx-export';
 
 interface ReviewScreenProps {
   article: Article;
+  unit: UnitProfile;
   onUpdateArticle: (updated: Article) => void;
   onMarkPublished: (publishedUrl?: string) => void;
   onBackToEdit: () => void;
+  onOpenWatermarkModal?: () => void;
 }
 
 export const ReviewScreen: React.FC<ReviewScreenProps> = ({
   article,
+  unit,
   onUpdateArticle,
   onMarkPublished,
   onBackToEdit,
+  onOpenWatermarkModal,
 }) => {
   const [copied, setCopied] = useState(false);
   const [publishedUrlInput, setPublishedUrlInput] = useState(article.published_url || '');
@@ -223,6 +229,26 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
             {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
             {copied ? 'Đã sao chép!' : 'SAO CHÉP TOÀN BỘ BÀI'}
           </button>
+
+          <button
+            onClick={() => generatePoliceWordDocument(article, unit)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-900/80 hover:bg-blue-800 text-blue-200 hover:text-white text-xs font-bold border border-blue-600 shadow transition-all"
+            title="Xuất file Word (.docx) chuẩn thể thức BCA"
+          >
+            <FileText className="h-4 w-4 text-blue-300" />
+            XUẤT WORD (.DOCX)
+          </button>
+
+          {onOpenWatermarkModal && (
+            <button
+              onClick={onOpenWatermarkModal}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-950/80 hover:bg-amber-900 text-amber-200 hover:text-white text-xs font-bold border border-amber-600 shadow transition-all"
+              title="Đóng dấu Logo CSGT và che mặt người vi phạm"
+            >
+              <ImageIcon className="h-4 w-4 text-amber-300" />
+              ĐÓNG DẤU ẢNH
+            </button>
+          )}
 
           <button
             onClick={() => setShowPublishDialog(true)}

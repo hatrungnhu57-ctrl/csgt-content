@@ -11,12 +11,14 @@ import { ArticleLibraryView } from '@/components/library/ArticleLibraryView';
 import { VideoScriptGenerator } from '@/components/video/VideoScriptGenerator';
 import { SettingsView } from '@/components/settings/SettingsView';
 import { LoginModal } from '@/components/auth/LoginModal';
+import { ImageWatermarkModal } from '@/components/media/ImageWatermarkModal';
 import { store, DEFAULT_UNIT_PROFILE } from '@/lib/store';
 import { Article, MonthlyTarget, TopicSuggestion, UnitProfile, UserAccount, AuditLogEntry, TeamTargetProgress } from '@/lib/store/types';
 
 export default function HomePage() {
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isWatermarkModalOpen, setIsWatermarkModalOpen] = useState(false);
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [articles, setArticles] = useState<Article[]>([]);
@@ -282,15 +284,18 @@ export default function HomePage() {
                 setActiveTab('review');
               }}
               onCancel={() => setActiveTab('dashboard')}
+              onOpenWatermarkModal={() => setIsWatermarkModalOpen(true)}
             />
           )}
 
           {activeTab === 'review' && currentReviewArticle && (
             <ReviewScreen
               article={currentReviewArticle}
+              unit={unitProfile}
               onUpdateArticle={handleSaveArticle}
               onMarkPublished={handleMarkPublished}
               onBackToEdit={() => handleEditArticle(currentReviewArticle.id)}
+              onOpenWatermarkModal={() => setIsWatermarkModalOpen(true)}
             />
           )}
 
@@ -305,6 +310,7 @@ export default function HomePage() {
           {activeTab === 'library' && (
             <ArticleLibraryView
               articles={articles}
+              unit={unitProfile}
               user={currentUser}
               onOpenArticle={handleOpenReview}
               onEditArticle={handleEditArticle}
@@ -313,6 +319,7 @@ export default function HomePage() {
                 setActiveTab('video');
               }}
               onDeleteArticle={handleDeleteArticle}
+              onOpenWatermarkModal={() => setIsWatermarkModalOpen(true)}
             />
           )}
 
@@ -336,6 +343,12 @@ export default function HomePage() {
           )}
         </main>
       </div>
+
+      <ImageWatermarkModal
+        isOpen={isWatermarkModalOpen}
+        onClose={() => setIsWatermarkModalOpen(false)}
+        unit={unitProfile}
+      />
 
       {/* Login & Switch Account Modal - Always force login when no user */}
       <LoginModal

@@ -253,6 +253,9 @@ export interface UnitProfile {
   channel_name: string;
   default_hashtags: string[];
   teams: TeamGroup[];
+  api_key?: string;
+  ai_provider?: 'rule_based' | 'openai' | 'claude' | 'gemini' | 'deepseek';
+  ai_model?: string;
   created_at: string;
   updated_at: string;
 }

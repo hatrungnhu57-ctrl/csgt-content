@@ -27,6 +27,7 @@ interface ArticleWriterWorkflowProps {
   onSaveArticle: (article: Article) => void;
   onProceedToReview: (articleId: string) => void;
   onCancel: () => void;
+  onOpenWatermarkModal?: () => void;
 }
 
 export const ArticleWriterWorkflow: React.FC<ArticleWriterWorkflowProps> = ({
@@ -36,6 +37,7 @@ export const ArticleWriterWorkflow: React.FC<ArticleWriterWorkflowProps> = ({
   onSaveArticle,
   onProceedToReview,
   onCancel,
+  onOpenWatermarkModal,
 }) => {
   // Wizard steps: 1 (Type) -> 2 (Data / Raw) -> 3 (Editor / Blocks)
   const [step, setStep] = useState<1 | 2 | 3>(initialArticle ? 3 : 1);
@@ -337,8 +339,10 @@ export const ArticleWriterWorkflow: React.FC<ArticleWriterWorkflowProps> = ({
 
           <BlockEditor
             article={currentArticle}
+            unit={unit}
             onUpdateArticle={handleUpdateArticleInEditor}
             onProceedToReview={() => onProceedToReview(currentArticle.id)}
+            onOpenWatermarkModal={onOpenWatermarkModal}
           />
         </div>
       )}
