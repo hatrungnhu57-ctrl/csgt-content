@@ -214,6 +214,7 @@ export default function HomePage() {
         unit={unitProfile}
         user={currentUser}
         target={target}
+        pendingReviewCount={pendingReviewCount}
         activeTab={activeTab}
         onNavigate={tab => setActiveTab(tab)}
         onOpenLogin={() => setIsLoginModalOpen(true)}

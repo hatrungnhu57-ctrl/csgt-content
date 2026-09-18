@@ -8,6 +8,7 @@ interface NavbarProps {
   unit: UnitProfile;
   user: UserAccount | null;
   target: MonthlyTarget;
+  pendingReviewCount?: number;
   activeTab: string;
   onNavigate: (tab: string) => void;
   onOpenLogin: () => void;
@@ -18,6 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   unit,
   user,
   target,
+  pendingReviewCount = 0,
   activeTab,
   onNavigate,
   onOpenLogin,
@@ -30,15 +32,17 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="flex h-16 items-center justify-between px-4 sm:px-6">
         {/* Left: Brand & Badges */}
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 text-white shadow-md border border-amber-400/40">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 text-white shadow-md border border-amber-400/40 cursor-pointer" onClick={() => onNavigate('dashboard')}>
             <Shield className="h-6 w-6 text-slate-950 fill-amber-300" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-lg tracking-tight text-white flex items-center gap-1.5">
+              <span className="font-bold text-lg tracking-tight text-white flex items-center gap-1.5 cursor-pointer" onClick={() => onNavigate('dashboard')}>
                 CSGT <span className="text-amber-400">Content</span>
               </span>
-              <span className="rounded bg-blue-900/60 px-2 py-0.5 text-[11px] font-semibold text-blue-300 border border-blue-700/50">
+              <span className={`rounded px-2 py-0.5 text-[11px] font-semibold border ${
+                isAdmin ? 'bg-amber-950/80 text-amber-300 border-amber-700/60' : 'bg-blue-900/60 text-blue-300 border-blue-700/50'
+              }`}>
                 {isAdmin ? 'Quản trị Chỉ huy' : 'Tài khoản Tổ công tác'}
               </span>
             </div>
@@ -48,8 +52,20 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Center/Right: Target Indicator & Officer info */}
+        {/* Center/Right: Target Indicator, Notifications & Officer info */}
         <div className="flex items-center gap-3">
+          {/* Admin Pending Reviews Notification Pill */}
+          {isAdmin && pendingReviewCount > 0 && (
+            <button
+              onClick={() => onNavigate('dashboard')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-950/80 border border-red-600/80 text-red-200 text-xs font-bold animate-pulse hover:bg-red-900/90 transition-colors shadow-lg shadow-red-950"
+              title="Có bài viết từ các Tổ đang chờ duyệt"
+            >
+              <Bell className="h-3.5 w-3.5 text-red-400" />
+              <span>{pendingReviewCount} bài chờ duyệt</span>
+            </button>
+          )}
+
           {/* Target Mini-Pill */}
           <button
             onClick={() => onNavigate('dashboard')}

@@ -19,6 +19,10 @@ import {
   Users,
   Award,
   AlertCircle,
+  Bell,
+  Eye,
+  Check,
+  ShieldAlert,
 } from 'lucide-react';
 import { Article, MonthlyTarget, TeamTargetProgress, UnitProfile, UserAccount } from '@/lib/store/types';
 
@@ -42,6 +46,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onNewArticle,
 }) => {
   const isAdmin = user.role === 'admin' || user.role === 'commander';
+
+  // Articles awaiting review by Admin
+  const pendingArticles = articles.filter(
+    a => a.status === 'NEEDS_REVIEW' || a.status === 'GENERATED' || a.status === 'DRAFT'
+  );
 
   // Filter recent articles based on role
   const displayedArticles = isAdmin
@@ -103,8 +112,80 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="space-y-6 pb-12">
-      {/* 1. Monthly Target & Deadline Alert (Section VI) */}
-      <div className="rounded-xl border border-slate-800 bg-[#11192e] p-6 shadow-lg relative overflow-hidden">
+      {/* 1. HÀNG ĐỢI DUYỆT BÀI CỦA CHỈ HUY (PENDING REVIEW QUEUE FOR ADMIN) */}
+      {isAdmin && pendingArticles.length > 0 && (
+        <div className="rounded-2xl border border-red-700/80 bg-gradient-to-r from-red-950/40 via-[#111c35] to-red-950/30 p-5 shadow-xl relative overflow-hidden space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-red-800/60">
+            <div className="flex items-center gap-2.5">
+              <div className="h-9 w-9 rounded-xl bg-red-600/20 border border-red-500/50 flex items-center justify-center text-red-400">
+                <Bell className="h-5 w-5 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-black text-white uppercase tracking-tight">
+                    HÀNG ĐỢI BÀI VIẾT CHỜ CHỈ HUY KIỂM DUYỆT
+                  </h2>
+                  <span className="px-2 py-0.5 rounded-full bg-red-600 text-white font-extrabold text-[10px] animate-bounce">
+                    {pendingArticles.length} bài mới
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300">
+                  Các Tổ công tác đã gửi bài viết tuyên truyền lên hệ thống để Chỉ huy thẩm định và phê duyệt xuất bản
+                </p>
+              </div>
+            </div>
+
+            <span className="text-[11px] text-amber-300 font-medium bg-amber-950/80 px-2.5 py-1 rounded-lg border border-amber-800/60">
+              ⚡ Yêu cầu duyệt theo quy cách Source-Lock
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            {pendingArticles.map(art => (
+              <div
+                key={art.id}
+                className="p-4 rounded-xl border border-slate-700/80 bg-slate-900/90 hover:bg-slate-850 hover:border-blue-500/70 transition-all flex flex-col justify-between space-y-3 shadow-md"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="font-extrabold text-blue-300 bg-blue-950/90 px-2.5 py-0.5 rounded-full border border-blue-800/60 text-[10px] uppercase">
+                      {art.team_name ? art.team_name.split('-')[0] : 'Tổ công tác'}
+                    </span>
+                    <span className="text-slate-400 font-mono text-[10px]">
+                      {new Date(art.created_at).toLocaleString('vi-VN')}
+                    </span>
+                  </div>
+
+                  <h3 className="text-xs font-bold text-white leading-snug line-clamp-2">
+                    {art.title}
+                  </h3>
+
+                  <p className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed bg-slate-950/60 p-2 rounded-lg border border-slate-800">
+                    {art.sapo || art.body}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">
+                  <span className="text-[11px] text-slate-400">
+                    Tác giả: <strong className="text-slate-200">{art.author_name}</strong>
+                  </span>
+
+                  <button
+                    onClick={() => onNavigate('review', art.id)}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-[11px] shadow-md shadow-blue-950 transition-all cursor-pointer"
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>ĐỌC THỬ & THẨM ĐỊNH →</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 2. Monthly Target & Deadline Alert (Section VI) */}
+      <div className="rounded-2xl border border-slate-800 bg-[#11192e] p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-amber-500 to-emerald-500" />
 
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
@@ -193,9 +274,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* 2. CHỈ HUY THEO DÕI CÁC TỔ (ADMIN TEAM MONITORING CARD) */}
+      {/* 3. CHỈ HUY THEO DÕI CÁC TỔ (ADMIN TEAM MONITORING CARD) */}
       {isAdmin && teamsProgress.length > 0 && (
-        <div className="rounded-xl border border-blue-800/60 bg-[#121c33] p-5 space-y-4 shadow-lg">
+        <div className="rounded-2xl border border-blue-800/60 bg-[#121c33] p-5 space-y-4 shadow-xl">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-amber-400" />
@@ -268,7 +349,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {/* 3. Quick Action Buttons (Section VI.2) */}
+      {/* 4. Quick Action Buttons (Section VI.2) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <button
           onClick={onNewArticle}
@@ -335,10 +416,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </button>
       </div>
 
-      {/* 4. Grid: Recent Articles & Topic Diversity */}
+      {/* 5. Grid: Recent Articles & Topic Diversity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Recent Articles */}
-        <div className="lg:col-span-2 rounded-xl border border-slate-800 bg-[#111827] p-5 space-y-4">
+        <div className="lg:col-span-2 rounded-2xl border border-slate-800 bg-[#111827] p-5 space-y-4 shadow-xl">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
             <div className="flex items-center gap-2">
               <FileCheck className="h-5 w-5 text-blue-400" />
@@ -367,7 +448,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <div
                     key={art.id}
                     onClick={() => onNavigate('review', art.id)}
-                    className="p-3.5 rounded-lg bg-slate-900/70 hover:bg-slate-800 border border-slate-800/80 hover:border-slate-700 transition-all cursor-pointer flex items-center justify-between gap-4"
+                    className="p-3.5 rounded-xl bg-slate-900/70 hover:bg-slate-800 border border-slate-800/80 hover:border-slate-700 transition-all cursor-pointer flex items-center justify-between gap-4"
                   >
                     <div className="space-y-1 min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -412,7 +493,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           e.stopPropagation();
                           onNavigate('writer', art.id);
                         }}
-                        className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white"
+                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white"
                         title="Chỉnh sửa bài"
                       >
                         <FileEdit className="h-4 w-4" />
@@ -420,12 +501,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          onNavigate('video', art.id);
+                          onNavigate('review', art.id);
                         }}
-                        className="p-1.5 rounded bg-blue-950/60 hover:bg-blue-900 text-blue-300 hover:text-white border border-blue-800/50"
-                        title="Tạo video 9:16"
+                        className="px-3 py-1.5 rounded-lg bg-blue-900/60 hover:bg-blue-800 text-blue-300 hover:text-white text-xs font-bold border border-blue-700/60 transition-colors"
                       >
-                        <Video className="h-4 w-4" />
+                        Thẩm định AI
                       </button>
                     </div>
                   </div>
@@ -436,42 +516,52 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Right 1 Col: Topic Distribution */}
-        <div className="rounded-xl border border-slate-800 bg-[#111827] p-5 space-y-4">
-          <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
-            <BarChart3 className="h-5 w-5 text-amber-400" />
-            <div>
+        <div className="rounded-2xl border border-slate-800 bg-[#111827] p-5 space-y-4 shadow-xl">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-amber-400" />
               <h2 className="font-bold text-slate-200 text-sm">Cơ cấu chủ đề đã viết</h2>
-              <p className="text-[11px] text-slate-400">Kiểm soát tần suất để tránh lặp đề tài</p>
             </div>
+            <span className="text-[11px] text-slate-400">Đa dạng hóa</span>
           </div>
 
-          <div className="space-y-3">
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Hệ thống tự động theo dõi để cảnh báo nếu viết quá <strong>70%</strong> cùng một chủ đề trong tháng.
+          </p>
+
+          <div className="space-y-3 pt-2">
             {Object.entries(topicDistribution).map(([topic, count]) => {
-              const maxVal = Math.max(1, ...Object.values(topicDistribution));
-              const pct = Math.round((count / maxVal) * 100);
-              const isOverwritten = count >= 3 && count === maxVal;
+              const total = displayedArticles.length || 1;
+              const pct = Math.round((count / total) * 100);
+              const isOverused = count > 0 && pct >= 70;
 
               return (
-                <div key={topic} className="space-y-1">
-                  <div className="flex justify-between text-xs font-medium">
-                    <span className="text-slate-300 flex items-center gap-1.5">
+                <div key={topic} className="space-y-1 text-xs">
+                  <div className="flex justify-between font-medium">
+                    <span className={count > 0 ? 'text-slate-200 font-bold' : 'text-slate-500'}>
                       {topic}
-                      {isOverwritten && (
-                        <span className="text-[10px] text-amber-400 font-bold bg-amber-950/80 px-1.5 py-0.2 rounded border border-amber-800/60">
-                          Viết nhiều
-                        </span>
-                      )}
                     </span>
-                    <span className="text-slate-400 font-bold">{count} bài</span>
+                    <span className={isOverused ? 'text-red-400 font-bold' : count > 0 ? 'text-amber-400 font-bold' : 'text-slate-500'}>
+                      {count} bài ({pct}%)
+                    </span>
                   </div>
-                  <div className="w-full bg-slate-800/80 rounded-full h-2 overflow-hidden">
+                  <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
                     <div
-                      className={`h-full rounded-full ${
-                        isOverwritten ? 'bg-amber-500' : count > 0 ? 'bg-blue-500' : 'bg-slate-700'
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        isOverused
+                          ? 'bg-red-500'
+                          : count > 0
+                          ? 'bg-blue-500'
+                          : 'bg-transparent'
                       }`}
-                      style={{ width: `${Math.max(5, pct)}%` }}
+                      style={{ width: `${pct}%` }}
                     />
                   </div>
+                  {isOverused && (
+                    <span className="text-[10px] text-red-400 flex items-center gap-1 font-semibold">
+                      <AlertTriangle className="h-3 w-3" /> Viết quá nhiều đề tài này trong tháng!
+                    </span>
+                  )}
                 </div>
               );
             })}
