@@ -33,8 +33,8 @@ const STORAGE_KEYS = {
 // Default Unit Profile with 3 default Teams
 export const DEFAULT_UNIT_PROFILE: UnitProfile = {
   id: 'unit-01',
-  full_name: 'Phòng Cảnh sát giao thông - Công an tỉnh Vĩnh Long',
-  short_name: 'CSGT Đường Bộ - PC08 tỉnh Vĩnh Long',
+  full_name: 'Phòng Cảnh sát giao thông (PC08) - Công an tỉnh Vĩnh Long',
+  short_name: 'CSGT Đường Bộ - PC08 Công an tỉnh Vĩnh Long',
   parent_unit: 'Công an tỉnh Vĩnh Long',
   department: 'Phòng Cảnh sát giao thông (PC08)',
   location: 'Địa bàn tỉnh Vĩnh Long',
@@ -582,7 +582,7 @@ class StoreManager {
     }
     try {
       const parsed = JSON.parse(raw);
-      if (parsed.short_name === 'CSGT Đơn vị' || !parsed.short_name) {
+      if (parsed.short_name === 'CSGT Đơn vị' || parsed.short_name === 'CSGT Đường Bộ - PC08 tỉnh Vĩnh Long' || !parsed.short_name) {
         const updated = { ...DEFAULT_UNIT_PROFILE, ...parsed, short_name: DEFAULT_UNIT_PROFILE.short_name, full_name: DEFAULT_UNIT_PROFILE.full_name, parent_unit: DEFAULT_UNIT_PROFILE.parent_unit };
         this.saveUnitProfile(updated);
         return updated;

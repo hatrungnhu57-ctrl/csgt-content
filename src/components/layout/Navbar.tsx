@@ -32,10 +32,19 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="flex h-16 items-center justify-between px-4 sm:px-6">
         {/* Left: Brand & Badges */}
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900/90 shadow-md border border-amber-500/40 cursor-pointer overflow-hidden p-0.5" onClick={() => onNavigate('dashboard')}>
-            <img src="/logo-csgt.png" alt="Logo CSGT" className="h-full w-full object-contain" onError={(e) => {
-              (e.target as HTMLElement).style.display = 'none';
-            }} />
+          <div
+            className="flex h-11 w-11 items-center justify-center rounded-xl bg-white p-1 shadow-lg shadow-amber-500/20 border-2 border-amber-400/90 cursor-pointer overflow-hidden transition-transform hover:scale-105 shrink-0"
+            onClick={() => onNavigate('dashboard')}
+            title="Trang tổng quan nghiệp vụ"
+          >
+            <img
+              src="/logo-csgt.png"
+              alt="Logo CSGT"
+              className="h-full w-full object-contain mix-blend-multiply"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = 'none';
+              }}
+            />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -48,8 +57,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {isAdmin ? 'Quản trị Chỉ huy' : 'Tài khoản Tổ công tác'}
               </span>
             </div>
-            <p className="text-xs font-medium text-amber-300/90 truncate max-w-[320px] sm:max-w-xl">
-              {unit.short_name || 'CSGT Đường Bộ - PC08 tỉnh Vĩnh Long'} • {unit.parent_unit || 'Công an tỉnh Vĩnh Long'}
+            <p className="text-xs font-semibold text-amber-300/90 truncate max-w-[320px] sm:max-w-xl">
+              CSGT Đường Bộ - PC08  Công an tỉnh Vĩnh Long
             </p>
           </div>
         </div>

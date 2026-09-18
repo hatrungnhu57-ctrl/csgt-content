@@ -56,14 +56,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onLoginSuccess, 
           {/* Official Emblem & Title Header */}
           <div className="flex flex-col items-center text-center space-y-3">
             <div className="relative">
-              <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 p-0.5 shadow-xl shadow-amber-500/20">
-                <div className="h-full w-full rounded-[14px] bg-slate-950 flex items-center justify-center p-1.5 overflow-hidden">
-                  <img src="/logo-csgt.png" alt="Logo CSGT" className="h-full w-full object-contain" onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
-                  }} />
+              <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 p-0.5 shadow-2xl shadow-amber-500/30">
+                <div className="h-full w-full rounded-[14px] bg-white flex items-center justify-center p-1.5 overflow-hidden">
+                  <img
+                    src="/logo-csgt.png"
+                    alt="Logo CSGT"
+                    className="h-full w-full object-contain mix-blend-multiply"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
                 </div>
               </div>
-              <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-emerald-500 border-2 border-[#0d1527] flex items-center justify-center shadow-sm">
+              <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-emerald-500 border-2 border-[#0d1527] flex items-center justify-center shadow-md">
                 <Lock className="h-3 w-3 text-slate-950" />
               </div>
             </div>
@@ -75,8 +80,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onLoginSuccess, 
               <h2 className="text-xl font-extrabold text-white tracking-tight">
                 ĐĂNG NHẬP HỆ THỐNG
               </h2>
-              <p className="text-xs text-amber-300/80 font-medium mt-1 leading-relaxed max-w-xs mx-auto">
-                CSGT Đường Bộ - PC08 tỉnh Vĩnh Long
+              <p className="text-xs text-amber-300 font-semibold mt-1 leading-relaxed max-w-xs mx-auto">
+                CSGT Đường Bộ - PC08  Công an tỉnh Vĩnh Long
               </p>
             </div>
           </div>

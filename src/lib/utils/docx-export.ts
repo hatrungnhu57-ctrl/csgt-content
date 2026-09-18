@@ -9,7 +9,7 @@ export function generatePoliceWordDocument(article: Article, unit: UnitProfile):
   const month = dateObj.getMonth() + 1;
   const year = dateObj.getFullYear();
 
-  const unitName = unit.full_name || 'Phòng Cảnh sát giao thông - Công an tỉnh Vĩnh Long';
+  const unitName = unit.full_name || 'Phòng Cảnh sát giao thông (PC08) - Công an tỉnh Vĩnh Long';
   const parentUnit = unit.parent_unit || 'CÔNG AN TỈNH VĨNH LONG';
   const department = unit.department || 'PHÒNG CẢNH SÁT GIAO THÔNG (PC08)';
   const location = unit.location || 'Vĩnh Long';

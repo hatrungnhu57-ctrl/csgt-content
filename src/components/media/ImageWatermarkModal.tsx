@@ -30,7 +30,7 @@ export const ImageWatermarkModal: React.FC<ImageWatermarkModalProps> = ({
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [logoPosition, setLogoPosition] = useState<'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'>('top-left');
   const [showBannerText, setShowBannerText] = useState(true);
-  const [customBannerText, setCustomBannerText] = useState('CSGT ĐƯỜNG BỘ - PC08 TỈNH VĨNH LONG');
+  const [customBannerText, setCustomBannerText] = useState('CSGT ĐƯỜNG BỘ - PC08  CÔNG AN TỈNH VĨNH LONG');
   const [blurBoxes, setBlurBoxes] = useState<{ x: number; y: number; w: number; h: number }[]>([]);
   const [isDrawingBlur, setIsDrawingBlur] = useState(false);
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
@@ -210,15 +210,15 @@ export const ImageWatermarkModal: React.FC<ImageWatermarkModalProps> = ({
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-[#11192e]">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-slate-900 border border-amber-500/50 p-1 flex items-center justify-center">
-              <img src="/logo-csgt.png" alt="Logo CSGT" className="h-full w-full object-contain" />
+            <div className="h-10 w-10 rounded-xl bg-white border-2 border-amber-400/90 p-0.5 flex items-center justify-center shadow-md shrink-0">
+              <img src="/logo-csgt.png" alt="Logo CSGT" className="h-full w-full object-contain mix-blend-multiply" />
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
                 CÔNG CỤ XỬ LÝ ẢNH & ĐÓNG DẤU WATERMARK CSGT
               </h2>
-              <p className="text-xs text-slate-400">
-                Chèn Logo CSGT, thanh nhận diện đơn vị và che mặt người vi phạm trước khi xuất bản
+              <p className="text-xs text-amber-300 font-semibold">
+                CSGT Đường Bộ - PC08  Công an tỉnh Vĩnh Long
               </p>
             </div>
           </div>
