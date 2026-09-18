@@ -335,14 +335,32 @@ export const ArticleDataForm: React.FC<ArticleDataFormProps> = ({
                   </div>
 
                   <div className="md:col-span-3 space-y-1">
-                    <label className="text-[11px] font-medium text-slate-400">Căn cứ pháp lý (Điều/Nghị định)</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-medium text-slate-400">Căn cứ pháp lý (Điều/Nghị định)</label>
+                    </div>
                     <input
                       type="text"
-                      placeholder="VD: Điểm a Khoản 8 Điều 5 NĐ 100/2019"
+                      placeholder="VD: NĐ 168/2024/NĐ-CP hoặc NĐ 238/2026/NĐ-CP"
                       value={viol.legal_reference || ''}
                       onChange={e => handleUpdateViolation(idx, 'legal_reference', e.target.value)}
                       className="w-full rounded border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white focus:border-blue-500 focus:outline-none font-mono text-[11px]"
                     />
+                    <div className="flex flex-wrap gap-1 pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateViolation(idx, 'legal_reference', 'Nghị định 168/2024/NĐ-CP')}
+                        className="text-[9.5px] px-1.5 py-0.5 rounded bg-blue-950/80 text-blue-300 border border-blue-800/60 hover:bg-blue-900 font-mono"
+                      >
+                        + NĐ 168/2024
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateViolation(idx, 'legal_reference', 'Nghị định 238/2026/NĐ-CP')}
+                        className="text-[9.5px] px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 hover:bg-emerald-900 font-mono"
+                      >
+                        + NĐ 238/2026
+                      </button>
+                    </div>
                   </div>
 
                   <div className="md:col-span-2 flex items-end justify-between gap-2 pt-4 md:pt-0">

@@ -1,6 +1,22 @@
 // Legal Verification Guardrail (Section XVIII, XX)
+// Updated with Nghị định 168/2024/NĐ-CP & Nghị định 238/2026/NĐ-CP
 
 import { LegalReviewResult, SourceData } from '../store/types';
+
+/**
+ * Known valid traffic decree references in Vietnam
+ */
+export const VALID_TRAFFIC_DECREES = [
+  '168/2024/NĐ-CP',
+  '238/2026/NĐ-CP',
+  '100/2019/NĐ-CP',
+  '123/2021/NĐ-CP',
+  'NĐ 168/2024',
+  'NĐ 238/2026',
+  'Nghị định 168/2024/NĐ-CP',
+  'Nghị định 238/2026/NĐ-CP',
+  'Luật Trật tự, an toàn giao thông đường bộ',
+];
 
 /**
  * Checks that all legal references and penalties mentioned in the article
@@ -27,7 +43,7 @@ export function reviewArticleLegal(sourceData: SourceData, articleText: string):
   }
 
   // Check if article text contains unverified keywords or un-sourced Decree numbers
-  const decreePattern = /Nghị định số\s+[0-9/]+[A-Z-]*|Nghị định\s+[0-9]+/gi;
+  const decreePattern = /Nghị định(?:\s+số)?\s+[0-9/]+(?:\/[A-Z-]+)?|NĐ\s+[0-9/]+/gi;
   const matches = articleText.match(decreePattern);
   if (matches) {
     matches.forEach(m => {

@@ -90,6 +90,18 @@ export default function HomePage() {
   };
 
   const handleDeleteArticle = (id: string) => {
+    const art = store.getArticleById(id);
+    if (art) {
+      const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'commander';
+      const isOwner = Boolean(
+        (currentUser?.team_id && art.team_id && art.team_id === currentUser.team_id) ||
+        (currentUser?.id && art.user_id && art.user_id === currentUser.id)
+      );
+      if (!isAdmin && !isOwner) {
+        alert('Tổ của đồng chí không có quyền xóa bài viết của Tổ khác!');
+        return;
+      }
+    }
     store.deleteArticle(id);
     refreshData();
   };
@@ -113,6 +125,15 @@ export default function HomePage() {
   const handleEditArticle = (id: string) => {
     const art = store.getArticleById(id);
     if (art) {
+      const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'commander';
+      const isOwner = Boolean(
+        (currentUser?.team_id && art.team_id && art.team_id === currentUser.team_id) ||
+        (currentUser?.id && art.user_id && art.user_id === currentUser.id)
+      );
+      if (!isAdmin && !isOwner) {
+        alert('Tổ của đồng chí chỉ được xem hoặc chỉnh sửa bài viết của Tổ mình!');
+        return;
+      }
       setWriterInitialArticle(art);
       setSelectedArticleId(id);
       setActiveTab('writer');
@@ -284,6 +305,7 @@ export default function HomePage() {
           {activeTab === 'library' && (
             <ArticleLibraryView
               articles={articles}
+              user={currentUser}
               onOpenArticle={handleOpenReview}
               onEditArticle={handleEditArticle}
               onGenerateVideo={id => {

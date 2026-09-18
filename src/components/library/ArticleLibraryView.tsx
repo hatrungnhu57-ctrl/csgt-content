@@ -17,10 +17,11 @@ import {
   ShieldCheck,
   ExternalLink,
 } from 'lucide-react';
-import { Article, ArticleStatus, ArticleType } from '@/lib/store/types';
+import { Article, ArticleStatus, ArticleType, UserAccount } from '@/lib/store/types';
 
 interface ArticleLibraryViewProps {
   articles: Article[];
+  user?: UserAccount | null;
   onOpenArticle: (articleId: string) => void;
   onEditArticle: (articleId: string) => void;
   onGenerateVideo: (articleId: string) => void;
@@ -29,6 +30,7 @@ interface ArticleLibraryViewProps {
 
 export const ArticleLibraryView: React.FC<ArticleLibraryViewProps> = ({
   articles,
+  user,
   onOpenArticle,
   onEditArticle,
   onGenerateVideo,
@@ -39,6 +41,8 @@ export const ArticleLibraryView: React.FC<ArticleLibraryViewProps> = ({
   const [selectedType, setSelectedType] = useState<string>('ALL');
   const [selectedMonth, setSelectedMonth] = useState<string>('ALL');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const isAdmin = user?.role === 'admin' || user?.role === 'commander';
 
   // Filtered Articles (Section XXV: Tìm kiếm theo từ khóa, tiêu đề, nội dung, tháng, chủ đề, trạng thái)
   const filteredArticles = useMemo(() => {
@@ -195,6 +199,12 @@ export const ArticleLibraryView: React.FC<ArticleLibraryViewProps> = ({
               const isApp = art.status === 'APPROVED';
               const isRev = art.status === 'NEEDS_REVIEW' || art.status === 'GENERATED';
 
+              const isOwner = Boolean(
+                (user?.team_id && art.team_id && art.team_id === user.team_id) ||
+                (user?.id && art.user_id && art.user_id === user.id)
+              );
+              const canModify = isAdmin || isOwner;
+
               return (
                 <div
                   key={art.id}
@@ -296,25 +306,29 @@ export const ArticleLibraryView: React.FC<ArticleLibraryViewProps> = ({
                       <ShieldCheck className="h-3.5 w-3.5 text-amber-300" /> Thẩm định
                     </button>
 
-                    <button
-                      onClick={() => onEditArticle(art.id)}
-                      className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700"
-                      title="Sửa bài"
-                    >
-                      <FileEdit className="h-4 w-4" />
-                    </button>
+                    {canModify && (
+                      <button
+                        onClick={() => onEditArticle(art.id)}
+                        className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700"
+                        title="Chỉnh sửa bài của Tổ mình"
+                      >
+                        <FileEdit className="h-4 w-4" />
+                      </button>
+                    )}
 
-                    <button
-                      onClick={() => {
-                        if (confirm('Đồng chí có chắc chắn muốn xóa bài viết này?')) {
-                          onDeleteArticle(art.id);
-                        }
-                      }}
-                      className="p-2 rounded-lg bg-slate-800 hover:bg-red-950 text-slate-400 hover:text-red-400 border border-slate-700"
-                      title="Xóa bài"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {canModify && (
+                      <button
+                        onClick={() => {
+                          if (confirm('Đồng chí có chắc chắn muốn xóa bài viết này?')) {
+                            onDeleteArticle(art.id);
+                          }
+                        }}
+                        className="p-2 rounded-lg bg-slate-800 hover:bg-red-950 text-slate-400 hover:text-red-400 border border-slate-700"
+                        title="Xóa bài viết"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               );

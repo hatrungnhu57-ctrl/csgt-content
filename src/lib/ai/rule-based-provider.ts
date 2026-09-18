@@ -392,7 +392,7 @@ export class RuleBasedAIProvider implements AIProvider {
         id: 'viol-alc',
         violation_name: 'Vi phạm nồng độ cồn',
         count: alcMatch ? parseInt(alcMatch[1], 10) : (violations_count || 1),
-        legal_reference: 'Nghị định 100/2019/NĐ-CP (sửa đổi theo NĐ 123/2021/NĐ-CP)',
+        legal_reference: 'Nghị định 168/2024/NĐ-CP (sửa đổi, bổ sung theo NĐ 238/2026/NĐ-CP)',
         penalty: '',
         verified: false,
       });
