@@ -13,6 +13,7 @@ import {
   Eye,
   EyeOff,
   Sparkles,
+  Type,
 } from 'lucide-react';
 import { UnitProfile } from '@/lib/store/types';
 
@@ -28,6 +29,7 @@ export const ImageWatermarkModal: React.FC<ImageWatermarkModalProps> = ({
   unit,
 }) => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [watermarkStyle, setWatermarkStyle] = useState<'banner' | 'shield'>('banner');
   const [logoPosition, setLogoPosition] = useState<'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'>('top-left');
   const [showBannerText, setShowBannerText] = useState(true);
   const [customBannerText, setCustomBannerText] = useState('CSGT ĐƯỜNG BỘ - PC08  CÔNG AN TỈNH VĨNH LONG');
@@ -48,7 +50,7 @@ export const ImageWatermarkModal: React.FC<ImageWatermarkModalProps> = ({
     if (imageSrc && canvasRef.current) {
       renderCanvas();
     }
-  }, [imageSrc, logoPosition, showBannerText, customBannerText, blurBoxes]);
+  }, [imageSrc, watermarkStyle, logoPosition, showBannerText, customBannerText, blurBoxes]);
 
   if (!isOpen) return null;
 
@@ -81,7 +83,7 @@ export const ImageWatermarkModal: React.FC<ImageWatermarkModalProps> = ({
       // Draw original image
       ctx.drawImage(baseImg, 0, 0);
 
-      // Draw blur/mask boxes (che mặt người vi phạm)
+      // Draw blur/mask boxes (che mặt người vi phạm / biển số)
       blurBoxes.forEach(box => {
         ctx.save();
         ctx.fillStyle = '#1e293b';
@@ -97,32 +99,45 @@ export const ImageWatermarkModal: React.FC<ImageWatermarkModalProps> = ({
         ctx.restore();
       });
 
-      // Load and draw Logo CSGT
+      // Load and draw selected Watermark Logo
       const logo = new Image();
-      logo.src = '/logo-csgt.png';
+      logo.src = watermarkStyle === 'banner' ? '/logo-watermark.png' : '/logo-csgt.png';
       logo.onload = () => {
-        const logoSize = Math.max(80, Math.floor(canvas.width * 0.13));
-        const padding = Math.max(16, Math.floor(canvas.width * 0.025));
+        const padding = Math.max(14, Math.floor(canvas.width * 0.02));
+
+        let logoWidth: number;
+        let logoHeight: number;
+
+        if (watermarkStyle === 'banner') {
+          logoWidth = Math.max(160, Math.floor(canvas.width * 0.35));
+          const aspect = logo.naturalHeight / (logo.naturalWidth || 1) || 0.28;
+          logoHeight = Math.floor(logoWidth * aspect);
+        } else {
+          logoWidth = Math.max(80, Math.floor(canvas.width * 0.12));
+          logoHeight = Math.floor(logoWidth * (logo.naturalHeight / (logo.naturalWidth || 1) || 1.25));
+        }
 
         let logoX = padding;
         let logoY = padding;
 
+        const bannerReserve = showBannerText ? Math.max(36, Math.floor(canvas.height * 0.055)) + 8 : 0;
+
         if (logoPosition === 'top-right') {
-          logoX = canvas.width - logoSize - padding;
+          logoX = canvas.width - logoWidth - padding;
           logoY = padding;
         } else if (logoPosition === 'bottom-left') {
           logoX = padding;
-          logoY = canvas.height - logoSize - padding - (showBannerText ? 40 : 0);
+          logoY = canvas.height - logoHeight - padding - bannerReserve;
         } else if (logoPosition === 'bottom-right') {
-          logoX = canvas.width - logoSize - padding;
-          logoY = canvas.height - logoSize - padding - (showBannerText ? 40 : 0);
+          logoX = canvas.width - logoWidth - padding;
+          logoY = canvas.height - logoHeight - padding - bannerReserve;
         }
 
         // Draw shadow for logo
         ctx.save();
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
         ctx.shadowBlur = 10;
-        ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+        ctx.drawImage(logo, logoX, logoY, logoWidth, logoHeight);
         ctx.restore();
 
         // Draw bottom badge banner if enabled
@@ -133,9 +148,9 @@ export const ImageWatermarkModal: React.FC<ImageWatermarkModalProps> = ({
           ctx.save();
           // Gradient background banner at bottom
           const grad = ctx.createLinearGradient(0, canvas.height - bannerHeight, canvas.width, canvas.height);
-          grad.addColorStop(0, 'rgba(15, 23, 42, 0.92)');
-          grad.addColorStop(0.5, 'rgba(30, 58, 138, 0.95)');
-          grad.addColorStop(1, 'rgba(15, 23, 42, 0.92)');
+          grad.addColorStop(0, 'rgba(15, 23, 42, 0.94)');
+          grad.addColorStop(0.5, 'rgba(30, 58, 138, 0.96)');
+          grad.addColorStop(1, 'rgba(15, 23, 42, 0.94)');
 
           ctx.fillStyle = grad;
           ctx.fillRect(0, canvas.height - bannerHeight, canvas.width, bannerHeight);
@@ -279,8 +294,38 @@ export const ImageWatermarkModal: React.FC<ImageWatermarkModalProps> = ({
                 <Sliders className="h-4 w-4 text-amber-400" /> TÙY CHỌN LOGO & VIỀN
               </h3>
 
+              {/* Watermark Logo Style Choice */}
               <div className="space-y-1.5">
-                <label className="font-semibold text-slate-300">Vị trí đóng dấu Logo CSGT:</label>
+                <label className="font-semibold text-slate-300">Mẫu Logo đóng dấu:</label>
+                <div className="grid grid-cols-2 gap-2 font-medium">
+                  <button
+                    type="button"
+                    onClick={() => setWatermarkStyle('banner')}
+                    className={`p-2 rounded-lg border text-center transition-colors ${
+                      watermarkStyle === 'banner'
+                        ? 'bg-blue-600 text-white border-blue-400 font-bold'
+                        : 'bg-slate-800 text-slate-300 border-slate-700'
+                    }`}
+                  >
+                    Logo + BỘ CÔNG AN
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWatermarkStyle('shield')}
+                    className={`p-2 rounded-lg border text-center transition-colors ${
+                      watermarkStyle === 'shield'
+                        ? 'bg-blue-600 text-white border-blue-400 font-bold'
+                        : 'bg-slate-800 text-slate-300 border-slate-700'
+                    }`}
+                  >
+                    Phù hiệu hình Khiên
+                  </button>
+                </div>
+              </div>
+
+              {/* Watermark Position */}
+              <div className="space-y-1.5 pt-2 border-t border-slate-800">
+                <label className="font-semibold text-slate-300">Vị trí đóng dấu Logo:</label>
                 <div className="grid grid-cols-2 gap-2 font-medium">
                   {(['top-left', 'top-right', 'bottom-left', 'bottom-right'] as const).map(pos => (
                     <button
@@ -302,6 +347,7 @@ export const ImageWatermarkModal: React.FC<ImageWatermarkModalProps> = ({
                 </div>
               </div>
 
+              {/* Unit Banner Bar */}
               <div className="space-y-1.5 pt-2 border-t border-slate-800">
                 <label className="font-semibold text-slate-300 flex items-center justify-between">
                   <span>Dải banner nhận diện đơn vị:</span>
